@@ -1,0 +1,31 @@
+julesops:
+  enabled: true
+
+  repository:
+    base_branch: main
+
+  queue:
+    queue_label: jules-queue
+    max_active_jobs: 1
+
+  states:
+    todo: status:todo
+    in_progress: status:in-progress
+    review: status:review
+    blocked: status:blocked
+    failed: status:failed
+    done: status:done
+
+  instructions:
+    core: .github/jules-core.md
+    repo: .github/jules-repo.md
+
+  blocked_comment:
+    marker: "## Blocked"
+
+  issue_completion:
+    close_on_merge: true
+
+  pull_request:
+    require_issue_link: true
+    target_base_branch_only: true
