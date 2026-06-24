@@ -1,0 +1,225 @@
+name: Jules Dispatch
+
+on:
+  schedule:
+    - cron: "15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  JULESOPS_CONFIG_PATH: .github/julesops.yml
+
+jobs:
+  dispatch:
+    name: Dispatch next Jules issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve JulesOps configuration
+        id: config
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f "$JULESOPS_CONFIG_PATH" ]; then
+            echo "Missing $JULESOPS_CONFIG_PATH" >&2
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          import yaml
+          path = ".github/julesops.yml"
+          with open(path, "r", encoding="utf-8") as f:
+              raw = yaml.safe_load(f) or {}
+          cfg = raw.get("julesops", {})
+          repo = cfg.get("repository", {})
+          queue = cfg.get("queue", {})
+          states = cfg.get("states", {})
+          instructions = cfg.get("instructions", {})
+          values = {
+              "enabled": str(cfg.get("enabled", True)).lower(),
+              "base_branch": repo.get("base_branch", "main"),
+              "queue_label": queue.get("queue_label", "jules-queue"),
+              "status_todo": states.get("todo", "status:todo"),
+              "status_in_progress": states.get("in_progress", "status:in-progress"),
+              "status_review": states.get("review", "status:review"),
+              "status_blocked": states.get("blocked", "status:blocked"),
+              "status_failed": states.get("failed", "status:failed"),
+              "core_instructions": instructions.get("core", ".github/jules-core.md"),
+              "repo_instructions": instructions.get("repo", ".github/jules-repo.md"),
+          }
+          with open("/tmp/julesops_outputs.txt", "w", encoding="utf-8") as out:
+              for k, v in values.items():
+                  out.write(f"{k}={v}\\n")
+          PY
+
+          while IFS='=' read -r key value; do
+            echo "$key=$value" >> "$GITHUB_OUTPUT"
+          done < /tmp/julesops_outputs.txt
+
+      - name: Stop if JulesOps is disabled
+        if: steps.config.outputs.enabled != 'true'
+        run: echo "JulesOps disabled for this repository."
+
+      - name: Find active or queued Jules issue
+        if: steps.config.outputs.enabled == 'true'
+        id: queue
+        shell: bash
+        run: |
+          set -euo pipefail
+          QUEUE_LABEL="${{ steps.config.outputs.queue_label }}"
+          STATUS_TODO="${{ steps.config.outputs.status_todo }}"
+          STATUS_IN_PROGRESS="${{ steps.config.outputs.status_in_progress }}"
+          STATUS_REVIEW="${{ steps.config.outputs.status_review }}"
+          STATUS_BLOCKED="${{ steps.config.outputs.status_blocked }}"
+
+          active_json="$(gh issue list --repo "${{ github.repository }}" --state open --label "$QUEUE_LABEL" --json number,title,labels,createdAt)"
+          active_count="$(echo "$active_json" | jq --arg in_progress "$STATUS_IN_PROGRESS" --arg review "$STATUS_REVIEW" --arg blocked "$STATUS_BLOCKED" '[.[] | select(any(.labels[]; .name == $in_progress or .name == $review or .name == $blocked))] | length')"
+          if [ "$active_count" -gt 0 ]; then
+            active_issue="$(echo "$active_json" | jq -r --arg in_progress "$STATUS_IN_PROGRESS" --arg review "$STATUS_REVIEW" --arg blocked "$STATUS_BLOCKED" '[.[] | select(any(.labels[]; .name == $in_progress or .name == $review or .name == $blocked))] | sort_by(.number) | .[0].number')"
+            echo "has_active=true" >> "$GITHUB_OUTPUT"
+            echo "active_issue=$active_issue" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          todo_json="$(gh issue list --repo "${{ github.repository }}" --state open --label "$QUEUE_LABEL" --label "$STATUS_TODO" --json number,title,createdAt --limit 100)"
+          todo_count="$(echo "$todo_json" | jq 'length')"
+          if [ "$todo_count" -eq 0 ]; then
+            echo "has_active=false" >> "$GITHUB_OUTPUT"
+            echo "has_todo=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          issue_number="$(echo "$todo_json" | jq -r 'sort_by(.createdAt) | .[0].number')"
+          echo "has_active=false" >> "$GITHUB_OUTPUT"
+          echo "has_todo=true" >> "$GITHUB_OUTPUT"
+          echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
+
+      - name: Stop because another Jules issue is already active
+        if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active == 'true'
+        run: echo "Another Jules issue is already active (#${{ steps.queue.outputs.active_issue }}). Exiting."
+
+      - name: Stop because there is no queued Jules issue
+        if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo != 'true'
+        run: echo "No open queued Jules issue found. Exiting."
+
+      - name: Read Jules core instructions
+        if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true'
+        id: core_instructions
+        shell: bash
+        run: |
+          set -euo pipefail
+          CORE_PATH="${{ steps.config.outputs.core_instructions }}"
+          if [ ! -f "$CORE_PATH" ]; then
+            echo "Missing core instructions file: $CORE_PATH" >&2
+            exit 1
+          fi
+          {
+            echo "instructions<<EOF"
+            cat "$CORE_PATH"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Read repo-specific Jules instructions if present
+        if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true'
+        id: repo_instructions
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPO_PATH="${{ steps.config.outputs.repo_instructions }}"
+          if [ -f "$REPO_PATH" ]; then
+            {
+              echo "instructions<<EOF"
+              cat "$REPO_PATH"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "instructions<<EOF"
+              echo "No repo-specific Jules instructions were provided for this repository."
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch issue body for prompt context
+        if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true'
+        id: issue
+        shell: bash
+        run: |
+          set -euo pipefail
+          ISSUE_NUMBER="${{ steps.queue.outputs.issue_number }}"
+          gh issue view "$ISSUE_NUMBER" --repo "${{ github.repository }}" --json title,body,url > issue.json
+          {
+            echo "issue_title<<EOF"
+            jq -r '.title' issue.json
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "issue_body<<EOF"
+            jq -r '.body // ""' issue.json
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "issue_url=$(jq -r '.url' issue.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Invoke Jules for selected issue
+        if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true'
+        uses: google-labs-code/jules-invoke@v1.0.0
+        with:
+          starting_branch: ${{ steps.config.outputs.base_branch }}
+          prompt: |
+            Work GitHub issue #${{ steps.queue.outputs.issue_number }} in the repository `${{ github.repository }}`.
+
+            The configured base branch for this repository is `${{ steps.config.outputs.base_branch }}`.
+
+            Follow the JulesOps core instructions below exactly.
+
+            --- BEGIN JULESOPS CORE INSTRUCTIONS ---
+            ${{ steps.core_instructions.outputs.instructions }}
+            --- END JULESOPS CORE INSTRUCTIONS ---
+
+            Follow the repository-specific instructions below when they are relevant to the implementation.
+
+            --- BEGIN REPO-SPECIFIC JULES INSTRUCTIONS ---
+            ${{ steps.repo_instructions.outputs.instructions }}
+            --- END REPO-SPECIFIC JULES INSTRUCTIONS ---
+
+            Issue title:
+            ${{ steps.issue.outputs.issue_title }}
+
+            Issue URL:
+            ${{ steps.issue.outputs.issue_url }}
+
+            Issue body:
+            ${{ steps.issue.outputs.issue_body }}
+
+      - name: Mark issue as in-progress
+        if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true' && success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          ISSUE_NUMBER="${{ steps.queue.outputs.issue_number }}"
+          STATUS_TODO="${{ steps.config.outputs.status_todo }}"
+          STATUS_IN_PROGRESS="${{ steps.config.outputs.status_in_progress }}"
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_TODO" || true
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_IN_PROGRESS"
+
+      - name: Mark issue failed if dispatch/invocation failed
+        if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true' && failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          ISSUE_NUMBER="${{ steps.queue.outputs.issue_number }}"
+          STATUS_TODO="${{ steps.config.outputs.status_todo }}"
+          STATUS_IN_PROGRESS="${{ steps.config.outputs.status_in_progress }}"
+          STATUS_FAILED="${{ steps.config.outputs.status_failed }}"
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_TODO" || true
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_IN_PROGRESS" || true
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_FAILED" || true
+          gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" --body "JulesOps failed while dispatching this issue to Jules. Marking it as \`$STATUS_FAILED\` for maintainer review."
