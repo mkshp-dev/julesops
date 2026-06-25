@@ -1,0 +1,104 @@
+name: Jules Task
+description: Structured implementation task for JulesOps-managed Google Jules work
+title: "[Jules] "
+labels:
+  - jules-queue
+  - status:todo
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for implementation tasks intended for Google Jules under JulesOps.
+
+        Jules should:
+        - implement only the scope described here
+        - keep changes minimal and targeted
+        - run relevant verification for the changed surfaces when available
+        - open a PR targeting the configured base branch
+        - leave a blocked comment instead of guessing if the task is underspecified
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be achieved?
+      placeholder: |
+        Describe the desired end result in plain language.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What should Jules change, and what should it avoid touching?
+      placeholder: |
+        Include concrete boundaries.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checklist Jules must satisfy before the task is considered complete
+      value: |
+        - [ ] The requested behavior is implemented
+        - [ ] Existing behavior outside the issue scope remains unchanged
+        - [ ] Relevant verification commands were run and their results are reported honestly
+        - [ ] A PR targeting the configured base branch is opened and linked back to this issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: impacted_surfaces
+    attributes:
+      label: Impacted surfaces
+      description: Which parts of the repo are expected to change?
+      placeholder: |
+        Examples:
+        - README.md
+        - supabase/migrations/...
+        - src/services/...
+        - .github/workflows/...
+    validations:
+      required: false
+
+  - type: textarea
+    id: implementation_notes
+    attributes:
+      label: Implementation notes / file hints
+      description: Relevant files, architecture notes, query expectations, or implementation hints
+      placeholder: |
+        Examples:
+        - Relevant files: .github/julesops.yml, README.md
+        - Preserve webhook verification behavior
+        - Prefer a view / RPC rather than embedding logic in an edge function
+    validations:
+      required: false
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Explicitly out of scope
+      description: Optional but recommended — what should Jules avoid changing even if it looks related?
+      placeholder: |
+        Examples:
+        - Do not refactor unrelated workflows
+        - Do not backfill historical data in this issue
+        - Do not change release automation
+    validations:
+      required: false
+
+  - type: textarea
+    id: testing_notes
+    attributes:
+      label: Verification / testing notes
+      description: Optional verification commands, manual checks, or scenarios Jules should keep in mind
+      placeholder: |
+        Examples:
+        - Verify linked docs still match current workflow files
+        - Run the relevant test suite for the touched module
+    validations:
+      required: false
