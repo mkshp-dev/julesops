@@ -1,0 +1,108 @@
+name: Jules Watchdog
+
+on:
+  schedule:
+    - cron: "45 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  JULESOPS_CONFIG_PATH: .github/julesops.yml
+
+jobs:
+  watchdog:
+    name: Check stale Jules issues
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve JulesOps configuration
+        id: config
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import yaml
+          with open('.github/julesops.yml', 'r', encoding='utf-8') as f:
+              raw = yaml.safe_load(f) or {}
+          cfg = raw.get('julesops', {})
+          queue = cfg.get('queue', {})
+          states = cfg.get('states', {})
+          watchdog = cfg.get('watchdog', {})
+          values = {
+              'enabled': str(cfg.get('enabled', True)).lower(),
+              'queue_label': queue.get('queue_label', 'jules-queue'),
+              'status_in_progress': states.get('in_progress', 'status:in-progress'),
+              'status_review': states.get('review', 'status:review'),
+              'stale_in_progress_hours': str(watchdog.get('stale_in_progress_hours', 24)),
+              'stale_review_hours': str(watchdog.get('stale_review_hours', 72)),
+          }
+          with open('/tmp/julesops_outputs.txt', 'w', encoding='utf-8') as out:
+              for k, v in values.items():
+                  out.write(f'{k}={v}\n')
+          PY
+          while IFS='=' read -r key value; do
+            echo "$key=$value" >> "$GITHUB_OUTPUT"
+          done < /tmp/julesops_outputs.txt
+
+      - name: Stop if JulesOps is disabled
+        if: steps.config.outputs.enabled != 'true'
+        run: echo "JulesOps disabled for this repository."
+
+      - name: Comment on stale in-progress issues
+        if: steps.config.outputs.enabled == 'true'
+        shell: bash
+        env:
+          QUEUE_LABEL: ${{ steps.config.outputs.queue_label }}
+          STATUS_IN_PROGRESS: ${{ steps.config.outputs.status_in_progress }}
+          STALE_IN_PROGRESS_HOURS: ${{ steps.config.outputs.stale_in_progress_hours }}
+        run: |
+          set -euo pipefail
+          gh issue list --repo "${{ github.repository }}" --state open --label "$QUEUE_LABEL" --label "$STATUS_IN_PROGRESS" --json number,updatedAt > /tmp/in_progress_issues.json
+          python3 - <<'PY'
+          import json, os, subprocess
+          from datetime import datetime, timezone
+          with open('/tmp/in_progress_issues.json', 'r', encoding='utf-8') as f:
+              issues = json.load(f)
+          now = datetime.now(timezone.utc)
+          threshold = float(os.environ['STALE_IN_PROGRESS_HOURS'])
+          for issue in issues:
+              updated = datetime.fromisoformat(issue['updatedAt'].replace('Z', '+00:00'))
+              age_hours = (now - updated).total_seconds() / 3600.0
+              if age_hours >= threshold:
+                  body = f"## JulesOps Watchdog\n\nThis issue has been in **in-progress** for approximately **{age_hours:.1f} hours** without recent GitHub activity. Please review whether it needs follow-up."
+                  subprocess.run(['gh','issue','comment',str(issue['number']),'--repo',os.environ['GITHUB_REPOSITORY'],'--body',body], check=True)
+          PY
+
+      - name: Comment on stale review issues
+        if: steps.config.outputs.enabled == 'true'
+        shell: bash
+        env:
+          QUEUE_LABEL: ${{ steps.config.outputs.queue_label }}
+          STATUS_REVIEW: ${{ steps.config.outputs.status_review }}
+          STALE_REVIEW_HOURS: ${{ steps.config.outputs.stale_review_hours }}
+        run: |
+          set -euo pipefail
+          gh issue list --repo "${{ github.repository }}" --state open --label "$QUEUE_LABEL" --label "$STATUS_REVIEW" --json number,updatedAt > /tmp/review_issues.json
+          python3 - <<'PY'
+          import json, os, subprocess
+          from datetime import datetime, timezone
+          with open('/tmp/review_issues.json', 'r', encoding='utf-8') as f:
+              issues = json.load(f)
+          now = datetime.now(timezone.utc)
+          threshold = float(os.environ['STALE_REVIEW_HOURS'])
+          for issue in issues:
+              updated = datetime.fromisoformat(issue['updatedAt'].replace('Z', '+00:00'))
+              age_hours = (now - updated).total_seconds() / 3600.0
+              if age_hours >= threshold:
+                  body = f"## JulesOps Watchdog\n\nThis issue has been in **review** for approximately **{age_hours:.1f} hours** without recent GitHub activity. Please review the linked PR and decide whether to merge or close it."
+                  subprocess.run(['gh','issue','comment',str(issue['number']),'--repo',os.environ['GITHUB_REPOSITORY'],'--body',body], check=True)
+          PY
