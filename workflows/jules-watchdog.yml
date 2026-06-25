@@ -64,22 +64,65 @@ jobs:
           QUEUE_LABEL: ${{ steps.config.outputs.queue_label }}
           STATUS_IN_PROGRESS: ${{ steps.config.outputs.status_in_progress }}
           STALE_IN_PROGRESS_HOURS: ${{ steps.config.outputs.stale_in_progress_hours }}
+          WATCHDOG_COOLDOWN_HOURS: "24"
         run: |
           set -euo pipefail
           gh issue list --repo "${{ github.repository }}" --state open --label "$QUEUE_LABEL" --label "$STATUS_IN_PROGRESS" --json number,updatedAt > /tmp/in_progress_issues.json
           python3 - <<'PY'
           import json, os, subprocess
           from datetime import datetime, timezone
+
+          WATCHDOG_MARKER = "## JulesOps Watchdog"
+
+          def load_json(cmd):
+              out = subprocess.check_output(cmd, text=True)
+              return json.loads(out)
+
+          def recent_watchdog_comment_exists(issue_number: int, cooldown_hours: float) -> bool:
+              comments = load_json([
+                  "gh", "api",
+                  f"repos/{os.environ['GITHUB_REPOSITORY']}/issues/{issue_number}/comments"
+              ])
+              now = datetime.now(timezone.utc)
+              for comment in comments:
+                  body = comment.get("body", "")
+                  if WATCHDOG_MARKER not in body:
+                      continue
+                  created = comment.get("created_at")
+                  if not created:
+                      continue
+                  created_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                  age_hours = (now - created_dt).total_seconds() / 3600.0
+                  if age_hours < cooldown_hours:
+                      return True
+              return False
+
           with open('/tmp/in_progress_issues.json', 'r', encoding='utf-8') as f:
               issues = json.load(f)
+
           now = datetime.now(timezone.utc)
           threshold = float(os.environ['STALE_IN_PROGRESS_HOURS'])
+          cooldown = float(os.environ['WATCHDOG_COOLDOWN_HOURS'])
+
           for issue in issues:
               updated = datetime.fromisoformat(issue['updatedAt'].replace('Z', '+00:00'))
               age_hours = (now - updated).total_seconds() / 3600.0
-              if age_hours >= threshold:
-                  body = f"## JulesOps Watchdog\n\nThis issue has been in **in-progress** for approximately **{age_hours:.1f} hours** without recent GitHub activity. Please review whether it needs follow-up."
-                  subprocess.run(['gh','issue','comment',str(issue['number']),'--repo',os.environ['GITHUB_REPOSITORY'],'--body',body], check=True)
+              if age_hours < threshold:
+                  continue
+
+              if recent_watchdog_comment_exists(issue['number'], cooldown):
+                  continue
+
+              body = (
+                  f"## JulesOps Watchdog\n\n"
+                  f"This issue has been in **in-progress** for approximately **{age_hours:.1f} hours** "
+                  f"without recent GitHub activity. Please review whether it needs follow-up."
+              )
+              subprocess.run([
+                  'gh', 'issue', 'comment', str(issue['number']),
+                  '--repo', os.environ['GITHUB_REPOSITORY'],
+                  '--body', body
+              ], check=True)
           PY
 
       - name: Comment on stale review issues
@@ -89,20 +132,63 @@ jobs:
           QUEUE_LABEL: ${{ steps.config.outputs.queue_label }}
           STATUS_REVIEW: ${{ steps.config.outputs.status_review }}
           STALE_REVIEW_HOURS: ${{ steps.config.outputs.stale_review_hours }}
+          WATCHDOG_COOLDOWN_HOURS: "24"
         run: |
           set -euo pipefail
           gh issue list --repo "${{ github.repository }}" --state open --label "$QUEUE_LABEL" --label "$STATUS_REVIEW" --json number,updatedAt > /tmp/review_issues.json
           python3 - <<'PY'
           import json, os, subprocess
           from datetime import datetime, timezone
+
+          WATCHDOG_MARKER = "## JulesOps Watchdog"
+
+          def load_json(cmd):
+              out = subprocess.check_output(cmd, text=True)
+              return json.loads(out)
+
+          def recent_watchdog_comment_exists(issue_number: int, cooldown_hours: float) -> bool:
+              comments = load_json([
+                  "gh", "api",
+                  f"repos/{os.environ['GITHUB_REPOSITORY']}/issues/{issue_number}/comments"
+              ])
+              now = datetime.now(timezone.utc)
+              for comment in comments:
+                  body = comment.get("body", "")
+                  if WATCHDOG_MARKER not in body:
+                      continue
+                  created = comment.get("created_at")
+                  if not created:
+                      continue
+                  created_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                  age_hours = (now - created_dt).total_seconds() / 3600.0
+                  if age_hours < cooldown_hours:
+                      return True
+              return False
+
           with open('/tmp/review_issues.json', 'r', encoding='utf-8') as f:
               issues = json.load(f)
+
           now = datetime.now(timezone.utc)
           threshold = float(os.environ['STALE_REVIEW_HOURS'])
+          cooldown = float(os.environ['WATCHDOG_COOLDOWN_HOURS'])
+
           for issue in issues:
               updated = datetime.fromisoformat(issue['updatedAt'].replace('Z', '+00:00'))
               age_hours = (now - updated).total_seconds() / 3600.0
-              if age_hours >= threshold:
-                  body = f"## JulesOps Watchdog\n\nThis issue has been in **review** for approximately **{age_hours:.1f} hours** without recent GitHub activity. Please review the linked PR and decide whether to merge or close it."
-                  subprocess.run(['gh','issue','comment',str(issue['number']),'--repo',os.environ['GITHUB_REPOSITORY'],'--body',body], check=True)
+              if age_hours < threshold:
+                  continue
+
+              if recent_watchdog_comment_exists(issue['number'], cooldown):
+                  continue
+
+              body = (
+                  f"## JulesOps Watchdog\n\n"
+                  f"This issue has been in **review** for approximately **{age_hours:.1f} hours** "
+                  f"without recent GitHub activity. Please review the linked PR and decide whether to merge or close it."
+              )
+              subprocess.run([
+                  'gh', 'issue', 'comment', str(issue['number']),
+                  '--repo', os.environ['GITHUB_REPOSITORY'],
+                  '--body', body
+              ], check=True)
           PY
