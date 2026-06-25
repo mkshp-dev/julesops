@@ -20,7 +20,7 @@ A JulesOps-managed repository should contain the following surfaces:
 ├─ workflows/
 │  ├─ jules-dispatch.yml
 │  ├─ jules-state-sync.yml
-│  └─ jules-watchdog.yml        # optional / later
+│  └─ jules-watchdog.yml
 ├─ jules-core.md                # generic JulesOps orchestration contract
 ├─ jules-repo.md                # repo-specific implementation guidance
 └─ julesops.yml                 # repository config
@@ -41,6 +41,7 @@ Copy these files from the JulesOps repo into the adopting repository:
 ### From `workflows/`
 - `workflows/jules-dispatch.yml` → `.github/workflows/jules-dispatch.yml`
 - `workflows/jules-state-sync.yml` → `.github/workflows/jules-state-sync.yml`
+- `workflows/jules-watchdog.yml` → `.github/workflows/jules-watchdog.yml`
 
 ### Repo-specific file you must author
 Create `.github/jules-repo.md` in the adopting repo. This should contain repository-specific guidance such as:
@@ -59,6 +60,9 @@ At minimum, set:
 - the state labels
 - the instruction file paths
 - whether issues should auto-close on merge
+
+Optional but recommended:
+- watchdog thresholds for stale `in-progress` and `review` issues
 
 Example:
 
@@ -90,6 +94,10 @@ julesops:
 
   issue_completion:
     close_on_merge: true
+
+  watchdog:
+    stale_in_progress_hours: 24
+    stale_review_hours: 72
 ```
 
 See `docs/repo-config-spec.md` for the config contract.
@@ -135,6 +143,7 @@ Without this secret, dispatch will fail and the issue should be marked `status:f
    - move the issue to `status:in-progress`
 5. When Jules opens a PR with `Closes #...`, `Fixes #...`, or `Resolves #...` in the PR body, `Jules State Sync` should move the issue to `status:review`.
 6. When the PR merges, `Jules State Sync` should mark the issue `status:done` and close it if configured.
+7. `Jules Watchdog` should periodically comment on stale `in-progress` or `review` issues that exceed the configured thresholds.
 
 ---
 
@@ -181,6 +190,12 @@ Check:
 - the PR was merged rather than closed unmerged
 - the PR body linked the correct issue
 - `Jules State Sync` ran on the PR closed event
+
+## Watchdog is posting reminders too aggressively
+Check:
+- the `watchdog` thresholds in `.github/julesops.yml`
+- whether normal issue / PR activity is actually happening in GitHub
+- whether you want longer thresholds for slower review cycles
 
 ## Dispatch fails immediately
 Check:
