@@ -17,7 +17,7 @@ The workflow-kit surface now includes:
 - a reusable GitHub issue template for Jules tasks
 - generic orchestration instructions for Jules
 - a repo config contract via `.github/julesops.yml`
-- canonical dispatch and state-sync workflow templates
+- canonical dispatch, state-sync, and watchdog workflow templates
 - install / adoption docs and a dogfood example based on Aggregator
 
 ## Product direction
@@ -61,7 +61,8 @@ julesops/
 │  └─ julesops.yml
 ├─ workflows/
 │  ├─ jules-dispatch.yml
-│  └─ jules-state-sync.yml
+│  ├─ jules-state-sync.yml
+│  └─ jules-watchdog.yml
 └─ examples/
    └─ aggregator/
 ```
@@ -85,6 +86,7 @@ That means the current first-pass workflow contract is no longer just speculativ
 - queueing and dispatch logic
 - issue ↔ PR state transitions
 - blocked / failed conventions
+- stale-state detection via the watchdog workflow
 - the generic Jules orchestration contract
 - the repo config contract
 - reusable workflow / template artifacts
@@ -94,6 +96,24 @@ That means the current first-pass workflow contract is no longer just speculativ
 - its base branch and label names via `.github/julesops.yml`
 - issue acceptance criteria and scope
 - domain-specific migration / testing / architecture rules
+
+## Current watchdog behavior
+
+The first watchdog implementation is intentionally conservative.
+
+It currently:
+- scans open Jules issues in `in-progress`
+- scans open Jules issues in `review`
+- checks how long they have gone without GitHub activity
+- posts a structured reminder comment when they cross a configured staleness threshold
+
+The current watchdog is **comment-only**. It does not automatically requeue, relabel, or close issues.
+
+Default thresholds:
+- `in-progress`: 24 hours
+- `review`: 72 hours
+
+These can be overridden in `.github/julesops.yml` using a future-facing `watchdog` block.
 
 ## Initial development plan
 
