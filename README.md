@@ -11,13 +11,14 @@ Its goal is to make Google Jules usable as a reliable implementation agent insid
 
 ## Current scope
 
-The initial focus is a **workflow kit + documentation scaffold**:
+The initial focus is a **workflow kit + documentation scaffold**.
 
+The workflow-kit surface now includes:
 - a reusable GitHub issue template for Jules tasks
 - generic orchestration instructions for Jules
-- GitHub Actions workflows for dispatch and state sync
-- a repo config contract for repositories that want to adopt JulesOps
-- docs describing the state machine and architecture
+- a repo config contract via `.github/julesops.yml`
+- canonical dispatch and state-sync workflow templates
+- install / adoption docs and a dogfood example based on Aggregator
 
 ## Product direction
 
@@ -35,6 +36,7 @@ Planned evolution:
    - state sync workflow
    - watchdog / retry flows
    - repo configuration
+   - adoption docs / examples
 
 2. **Control plane / dashboard** (likely paid)
    - cross-repo visibility
@@ -42,41 +44,76 @@ Planned evolution:
    - stale-run detection and operational alerts
    - multi-repo management and reporting
 
-## Repository layout
+## Current repository layout
 
 ```text
 julesops/
 ├─ README.md
 ├─ docs/
+│  ├─ architecture.md
+│  ├─ install.md
 │  ├─ product.md
-│  ├─ state-machine.md
-│  └─ repo-config-spec.md
-├─ .github/
+│  ├─ repo-config-spec.md
+│  └─ state-machine.md
+├─ templates/
 │  ├─ jules-core.md
-│  └─ ISSUE_TEMPLATE/
-│     └─ jules-task.yml
+│  ├─ jules-task.yml
+│  └─ julesops.yml
+├─ workflows/
+│  ├─ jules-dispatch.yml
+│  └─ jules-state-sync.yml
 └─ examples/
    └─ aggregator/
 ```
+
+## Dogfood status
+
+JulesOps has now been dogfooded in the `Aggregator` repository.
+
+Validated flow in Aggregator:
+1. Jules issue created with queue + todo labels
+2. `Jules Dispatch` moved it to `in-progress`
+3. Jules opened a linked PR
+4. `Jules State Sync` moved it to `review`
+5. PR merge moved it to `done` and closed the issue
+
+That means the current first-pass workflow contract is no longer just speculative documentation — it has passed an end-to-end test in a real adopting repository.
+
+## What lives where
+
+### JulesOps owns
+- queueing and dispatch logic
+- issue ↔ PR state transitions
+- blocked / failed conventions
+- the generic Jules orchestration contract
+- the repo config contract
+- reusable workflow / template artifacts
+
+### The adopting repository owns
+- repo-specific implementation guidance in `.github/jules-repo.md`
+- its base branch and label names via `.github/julesops.yml`
+- issue acceptance criteria and scope
+- domain-specific migration / testing / architecture rules
 
 ## Initial development plan
 
 ### Milestone 1 — portable workflow kit
 - define the generic JulesOps state machine
 - split generic orchestration instructions from repo-specific instructions
-- port the existing Aggregator workflow into reusable templates
+- port the Aggregator workflow into reusable templates
 - define a repo config format
+- write adoption / install docs
 
 ### Milestone 2 — ops hardening
 - add watchdog / stale-job handling
 - add retry / requeue flow
-- add explicit dispatch failure handling
 - tighten issue ↔ PR ↔ Jules correlation rules
+- add optional comment-command ergonomics if useful
 
 ### Milestone 3 — second-repo adoption
-- dogfood JulesOps in Aggregator
-- adopt it in a second repo
+- adopt JulesOps in a second repository
 - use that to refine what belongs in the reusable kit vs repo-specific config
+- decide which pieces should move behind a future control plane
 
 ## Non-goals for v1
 
@@ -87,7 +124,7 @@ julesops/
 
 ## Open questions
 
-- what the default repo config contract should look like
-- how much state should live purely in GitHub labels vs an external backend
+- how much of the current workflow should stay as raw workflow YAML vs move into composite actions or a future GitHub App
+- whether `max_active_jobs > 1` should be supported in the workflow kit before a control plane exists
 - when the product should introduce a Supabase-backed jobs table / dashboard
-- whether the open-core boundary should be at workflow-kit vs dashboard / control-plane features
+- where the clean open-core boundary should sit between workflow kit and control-plane features
