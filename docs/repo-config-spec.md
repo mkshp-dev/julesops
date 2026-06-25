@@ -30,6 +30,9 @@ julesops:
     marker: "## Blocked"
   issue_completion:
     close_on_merge: true
+  watchdog:
+    stale_in_progress_hours: 24
+    stale_review_hours: 72
 ```
 
 ---
@@ -166,7 +169,28 @@ If `false`, the workflow may still mark the issue `done` but leave the issue ope
 
 ---
 
-# 8. Future / likely additions
+# 8. `watchdog`
+
+```yaml
+watchdog:
+  stale_in_progress_hours: 24
+  stale_review_hours: 72
+```
+
+Thresholds used by `Jules Watchdog` to decide when an issue should receive a stale reminder comment.
+
+## `watchdog.stale_in_progress_hours`
+How long an issue may remain in `in_progress` without GitHub activity before the watchdog comments.
+
+## `watchdog.stale_review_hours`
+How long an issue may remain in `review` without GitHub activity before the watchdog comments.
+
+### Current v1 behavior
+The watchdog is currently **comment-only**. It does not automatically requeue, relabel, or close issues.
+
+---
+
+# 9. Future / likely additions
 
 The following fields are plausible extensions but are not yet standardized in the first-pass kit:
 
@@ -181,16 +205,16 @@ Potential future meaning:
 - require the PR body to link a tracked issue
 - ensure Jules-created PRs target the configured base branch
 
-## Retry / watchdog policy
+## Retry policy
 ```yaml
-watchdog:
-  stale_in_progress_hours: 12
-  stale_review_hours: 72
+retry:
+  allow_requeue_from_failed: true
+  allow_requeue_from_blocked: true
 ```
 
 Potential future meaning:
-- thresholds for stale issue detection
-- reminder or requeue policy
+- whether maintainers can trigger a standardized retry path
+- whether comment-command retries should be enabled
 
 ## Completion comment behavior
 ```yaml
@@ -203,7 +227,7 @@ Potential future meaning:
 
 ---
 
-# 9. Validation expectations for v1
+# 10. Validation expectations for v1
 
 A repository adopting JulesOps should ensure:
 - the YAML parses correctly
@@ -215,6 +239,6 @@ The first-pass workflows do not yet perform exhaustive schema validation. They a
 
 ---
 
-# 10. Reference example
+# 11. Reference example
 
 See `examples/aggregator/julesops.yml` for a concrete config example based on the current Aggregator dogfood setup.
