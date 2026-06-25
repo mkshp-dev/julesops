@@ -1,137 +1,163 @@
 # JulesOps state machine
 
-This document defines the canonical **JulesOps job lifecycle** for a single Jules task associated with a GitHub issue.
+This document defines the first-pass JulesOps issue lifecycle for a repository using the workflow kit.
 
-The state machine is deliberately simple for the first version. It should be implementable with GitHub issue labels and workflow events before a dedicated backend exists.
-
----
-
-## Core states
-
-### `todo`
-The issue is eligible to be worked on by Jules but has not yet been dispatched.
-
-Typical meaning:
-- the issue is open
-- the issue has the Jules queue label
-- no active Jules run is currently associated with it
-
-### `dispatching`
-JulesOps has selected the issue and is attempting to invoke Jules.
-
-This state exists conceptually even if the earliest workflow implementation skips the label and transitions directly to `in_progress` after a successful dispatch.
-
-### `in_progress`
-Jules has been invoked for the issue and is expected to be working on it.
-
-Typical indicators:
-- Jules invocation succeeded
-- no PR exists yet, or the task is still being actively worked
-
-### `review`
-A PR exists for the task and the issue is now waiting for maintainer review / merge.
-
-### `blocked`
-The task could not be completed without maintainer input, or the linked PR was closed without merge, or another operational failure requires human intervention.
-
-### `failed`
-JulesOps itself failed to dispatch or manage the task cleanly, and the issue should not remain ambiguously in progress.
-
-Examples:
-- dispatch workflow failed before Jules was invoked
-- required workflow context was missing
-- a hard automation failure occurred that should not be conflated with a repository-level implementation block
-
-### `done`
-The task was completed and the linked PR was merged into the configured base branch.
+The v1 state machine is intentionally GitHub-native:
+- state is represented by issue labels
+- transitions are driven by GitHub Actions and PR events
+- blocked / failed outcomes remain visible in the issue itself
 
 ---
 
-## Allowed transitions
+# 1. Canonical states
 
-### Normal happy path
-- `todo -> dispatching`
-- `dispatching -> in_progress`
-- `in_progress -> review`
-- `review -> done`
+JulesOps uses six canonical states.
 
-### Block / failure paths
-- `dispatching -> failed`
-- `in_progress -> blocked`
-- `review -> blocked`
+| Canonical state | Typical label | Meaning |
+| --- | --- | --- |
+| `todo` | `status:todo` | Issue is queued and eligible for dispatch |
+| `in_progress` | `status:in-progress` | Jules has been dispatched successfully and is actively working |
+| `review` | `status:review` | Jules has opened a PR and the issue is awaiting human review / merge |
+| `blocked` | `status:blocked` | Jules could not continue safely, or the linked PR was closed without merge |
+| `failed` | `status:failed` | Dispatch / invocation failed before work could proceed normally |
+| `done` | `status:done` | The linked PR merged and the issue is complete |
 
-### Recovery / retry paths
-- `blocked -> todo`
-- `failed -> todo`
+Repositories may map these to different label names in `.github/julesops.yml`, but the semantic roles should remain the same.
 
 ---
 
-## Transition triggers
+# 2. Happy-path lifecycle
 
-## 1. `todo -> dispatching`
-Triggered by the JulesOps dispatcher selecting the next eligible issue.
+The standard flow is:
 
-## 2. `dispatching -> in_progress`
-Triggered when Jules invocation succeeds and the issue is officially handed to Jules.
+```text
+todo → in_progress → review → done
+```
 
-## 3. `dispatching -> failed`
-Triggered when the dispatch workflow cannot safely invoke Jules.
+## Step A — issue enters queue
+A maintainer creates a Jules task issue and applies:
+- the queue label (for example `jules-queue`)
+- the configured `todo` state label
 
-## 4. `in_progress -> review`
-Triggered when a linked PR is opened or reopened for the issue.
+## Step B — dispatcher selects the issue
+`Jules Dispatch` chooses the next eligible queued issue, assembles the prompt, invokes Jules, and on success moves the issue from `todo` to `in_progress`.
 
-## 5. `in_progress -> blocked`
-Triggered when Jules posts a structured blocked comment, or another workflow determines the task needs maintainer intervention.
+## Step C — Jules opens a PR
+When Jules opens a PR linked to the issue, `Jules State Sync` moves the issue from `in_progress` to `review`.
 
-## 6. `review -> done`
-Triggered when the linked PR is merged into the configured base branch.
+For the first-pass workflow kit, the PR body is expected to contain an issue-closing reference such as:
+- `Closes #123`
+- `Fixes #123`
+- `Resolves #123`
 
-## 7. `review -> blocked`
-Triggered when the linked PR is closed without merge, or review uncovers a state that requires rework / maintainer action.
-
-## 8. `blocked -> todo`
-Triggered manually by a maintainer after clarifying requirements, fixing external issues, or deciding to requeue the task.
-
-## 9. `failed -> todo`
-Triggered manually by a maintainer after resolving the operational failure or deciding to retry dispatch.
+## Step D — maintainer merges the PR
+When the linked PR merges, `Jules State Sync` moves the issue to `done` and optionally closes it.
 
 ---
 
-## First-pass label mapping
+# 3. Non-happy-path transitions
 
-A repository may map these states to labels, for example:
+## Dispatch failure
+If the dispatcher cannot successfully hand work to Jules, the issue should move to:
 
-- `todo` -> `status:todo`
-- `in_progress` -> `status:in-progress`
-- `review` -> `status:review`
-- `blocked` -> `status:blocked`
-- `failed` -> `status:failed`
-- `done` -> `status:done`
+```text
+todo → failed
+```
 
-`dispatching` may remain implicit in the earliest version if the dispatcher is short-lived, but it is part of the conceptual model and may later become an explicit state.
+Typical causes:
+- missing `JULES_API_KEY`
+- invalid workflow config
+- missing instruction files
+- invocation action failure
+
+The workflow should leave a comment if helpful and avoid leaving the issue ambiguously in progress.
+
+## Jules blocked during execution
+If Jules cannot safely continue, it should leave a structured blocked comment beginning with the configured marker, usually:
+
+```md
+## Blocked
+```
+
+When `Jules State Sync` sees that marker on an in-progress issue, it should move the issue to:
+
+```text
+in_progress → blocked
+```
+
+## PR closed without merge
+If Jules opens a PR but it is closed without merge, the issue should move to:
+
+```text
+review → blocked
+```
+
+This keeps the task visible for maintainer follow-up rather than silently losing it.
 
 ---
 
-## Invariants
+# 4. Current workflow triggers behind the transitions
 
-The first version of JulesOps should try to preserve these invariants:
+## `Jules Dispatch`
+Responsible for:
+- selecting the next queued issue
+- checking whether another issue is already active
+- invoking Jules
+- moving the issue into `in_progress` on success
+- moving the issue into `failed` on dispatch failure
 
-1. **At most one active Jules issue per repo** by default.
-   - Active means a task in `dispatching`, `in_progress`, or `review`.
-
-2. **A task should not remain ambiguously active after a known failure.**
-   - If dispatch fails, the issue should end up in `failed` or `blocked`, not silently remain `todo` or incorrectly move to `in_progress`.
-
-3. **A merged PR should deterministically resolve the issue.**
-   - If the PR targets the configured base branch and is the linked Jules PR, the issue should move to `done` and be closed if configured.
-
-4. **Blocked states should be explicit and legible.**
-   - The maintainer should be able to see why Jules stopped and what action is needed.
+## `Jules State Sync`
+Responsible for:
+- PR opened / reopened → move linked issue to `review`
+- PR merged → move linked issue to `done` and optionally close it
+- PR closed without merge → move linked issue to `blocked`
+- blocked issue comment marker → move issue to `blocked`
 
 ---
 
-## Open questions
+# 5. Active-state invariant
 
-- Should `review` count as an active state that blocks dispatch of the next issue? The initial Aggregator workflow treats it as active; that is likely the right default.
-- Should `failed` and `blocked` be distinct labels in v1, or should the first version collapse operational failures into `blocked` for simplicity?
-- Should retries create a new job attempt identity even if the GitHub issue remains the same?
+The first-pass workflow kit is designed around a **single active issue by default**.
+
+Operationally, an issue in one of these states counts as active for queue-blocking purposes:
+- `in_progress`
+- `review`
+- `blocked`
+
+That means the dispatcher should not select another queued issue while an active one exists, unless the workflow kit is later generalized to support multiple concurrent jobs.
+
+---
+
+# 6. Invariants JulesOps should preserve
+
+A repository using JulesOps should be able to rely on the following invariants:
+
+1. **A queued issue is not silently skipped** — it is either dispatched, still queued, or explicitly failed.
+2. **A Jules PR deterministically moves the issue into review** when the issue link is present.
+3. **A merged PR deterministically completes the issue**.
+4. **Blocked and failed outcomes are explicit** rather than disappearing into logs.
+5. **The issue remains the operational home of the task** even though the implementation work happens in a PR.
+
+---
+
+# 7. Things not yet modeled as first-class states
+
+The current state machine does **not** yet include dedicated states for:
+- `dispatching`
+- `retrying`
+- `awaiting-human-input`
+- `cancelled`
+- `stale-review`
+
+Those may become useful later, but the current dogfood result suggests the six-state model is a good starting point.
+
+---
+
+# 8. Relationship to future watchdog / retry flows
+
+The state machine is designed to support future automation such as:
+- detecting issues stuck in `in_progress` too long without PR or blocked comment
+- detecting issues stuck in `review` too long without merge
+- allowing a maintainer to requeue a blocked / failed issue with a command or label transition
+
+Those flows should build on the existing state semantics rather than replace them.
