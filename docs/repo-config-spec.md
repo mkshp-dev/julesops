@@ -1,38 +1,21 @@
 # JulesOps repository config spec
 
-This document defines the first-pass configuration contract for a repository that wants to adopt JulesOps.
+This document defines the first-pass config contract for repositories adopting JulesOps.
 
-The exact filename is still open, but the working assumption is a repository-level file such as `.github/julesops.yml` or `julesops.yml`.
+Config file location:
 
----
+- `.github/julesops.yml`
 
-## Design goals
-
-The config should allow a repository to customize:
-
-- which branch Jules PRs should target
-- which labels represent queue and status states
-- where JulesOps should find generic vs repo-specific instructions
-- whether issue closure and other behaviors are enabled
-- basic concurrency / queue behavior
-
-It should **not** try to encode repository-specific implementation guidance. That belongs in repo-specific Jules instructions.
-
----
-
-## Proposed v1 schema
+Top-level shape:
 
 ```yaml
 julesops:
   enabled: true
-
   repository:
-    base_branch: Dev
-
+    base_branch: main
   queue:
     queue_label: jules-queue
     max_active_jobs: 1
-
   states:
     todo: status:todo
     in_progress: status:in-progress
@@ -40,134 +23,198 @@ julesops:
     blocked: status:blocked
     failed: status:failed
     done: status:done
-
   instructions:
     core: .github/jules-core.md
     repo: .github/jules-repo.md
-
   blocked_comment:
     marker: "## Blocked"
-
   issue_completion:
     close_on_merge: true
-
-  pull_request:
-    require_issue_link: true
-    target_base_branch_only: true
 ```
 
 ---
 
-## Field descriptions
+# 1. `enabled`
 
-## `enabled`
-Whether JulesOps automation should run for the repository.
+```yaml
+enabled: true
+```
 
-## `repository.base_branch`
-The branch that Jules work should target.
+Whether JulesOps is active for the repository.
 
-Example:
-- `Dev`
+If `false`, dispatch workflows should exit without selecting work.
+
+---
+
+# 2. `repository.base_branch`
+
+```yaml
+repository:
+  base_branch: Dev
+```
+
+The branch Jules should target when opening implementation PRs.
+
+Examples:
 - `main`
+- `master`
+- `develop`
+- `Dev`
+
+This value is consumed by the dispatch workflow and should be included in the prompt passed to Jules.
+
+---
+
+# 3. `queue`
 
 ## `queue.queue_label`
-The label used to identify issues that belong to the Jules queue.
-
-Example:
-- `jules-queue`
-
-## `queue.max_active_jobs`
-Maximum number of active Jules jobs allowed at once in the repository.
-
-The first implementation should default to `1`.
-
-## `states.*`
-Maps canonical JulesOps states to repository-specific labels.
-
-This keeps the internal state machine stable while letting repositories choose their label names.
-
-## `instructions.core`
-Path to the **generic orchestration instructions** that Jules should always follow in a JulesOps-enabled repo.
-
-Example:
-- `.github/jules-core.md`
-
-## `instructions.repo`
-Path to the **repo-specific implementation instructions** for that repository.
-
-Example:
-- `.github/jules-repo.md`
-
-## `blocked_comment.marker`
-Marker string used to detect a structured blocked comment from Jules.
-
-The first implementation will likely use a simple substring check.
-
-## `issue_completion.close_on_merge`
-Whether JulesOps should close the issue automatically when the linked PR is merged into the configured base branch.
-
-## `pull_request.require_issue_link`
-Whether Jules-created PRs are expected to include a GitHub issue-closing reference such as `Closes #123`.
-
-## `pull_request.target_base_branch_only`
-Whether JulesOps should assume Jules PRs must target the configured base branch and treat other target branches as invalid / out of policy.
-
----
-
-## Example: Aggregator-style config
 
 ```yaml
-julesops:
-  enabled: true
-
-  repository:
-    base_branch: Dev
-
-  queue:
-    queue_label: jules-queue
-    max_active_jobs: 1
-
-  states:
-    todo: status:todo
-    in_progress: status:in-progress
-    review: status:review
-    blocked: status:blocked
-    failed: status:failed
-    done: status:done
-
-  instructions:
-    core: .github/jules-core.md
-    repo: .github/jules-repo.md
-
-  blocked_comment:
-    marker: "## Blocked"
-
-  issue_completion:
-    close_on_merge: true
-
-  pull_request:
-    require_issue_link: true
-    target_base_branch_only: true
+queue:
+  queue_label: jules-queue
 ```
 
+The label that marks issues as eligible for JulesOps queueing.
+
+## `queue.max_active_jobs`
+
+```yaml
+queue:
+  max_active_jobs: 1
+```
+
+The maximum number of active Jules issues allowed at once.
+
+### Current v1 behavior
+The first-pass workflow kit currently behaves as **single-active-job by default**. The current implementation uses the presence of issues in active states to prevent dispatching new work.
+
+In other words, `max_active_jobs` is currently more of a config declaration than a fully generalized scheduler input.
+
+That is acceptable for v1, but the eventual goal is for the workflow kit or future control plane to honor values greater than 1 explicitly.
+
 ---
 
-## Likely future extensions
+# 4. `states`
 
-These do **not** need to be in the first implementation, but are plausible future additions:
+```yaml
+states:
+  todo: status:todo
+  in_progress: status:in-progress
+  review: status:review
+  blocked: status:blocked
+  failed: status:failed
+  done: status:done
+```
 
-- `watchdog.max_in_progress_age_hours`
-- `watchdog.max_review_age_hours`
-- `retry.allow_comment_commands`
-- `retry.comment_command_prefix`
-- `notifications.*`
-- `dashboard.*`
-- `backend.*` for optional hosted control-plane integration
+These labels define the JulesOps state machine.
+
+## Required semantics
+- `todo`: queued and ready for dispatch
+- `in_progress`: Jules has been dispatched successfully and work is active
+- `review`: Jules has opened a PR and the issue is awaiting maintainer review / merge
+- `blocked`: Jules could not continue safely and left a blocked comment, or a linked PR was closed without merge
+- `failed`: the dispatch / invocation step failed before work could proceed normally
+- `done`: the linked PR merged and the issue is complete
+
+The actual label names are configurable, but the workflows assume the semantic roles above.
 
 ---
 
-## Open questions
+# 5. `instructions`
 
-1. Should the config live at `.github/julesops.yml` or repository root?
-2. Should `dispatching` be a configurable state label from day one, or stay implicit until it exists operationally?
-3. Should there be an explicit config field for which labels count as “active” when blocking dispatch of the next issue?
+```yaml
+instructions:
+  core: .github/jules-core.md
+  repo: .github/jules-repo.md
+```
+
+Paths to the instruction files used to build the Jules prompt.
+
+## `instructions.core`
+Path to the generic JulesOps orchestration contract.
+
+## `instructions.repo`
+Path to the adopting repository’s repo-specific implementation guidance.
+
+The repo-specific file is optional in principle, but strongly recommended in practice.
+
+---
+
+# 6. `blocked_comment.marker`
+
+```yaml
+blocked_comment:
+  marker: "## Blocked"
+```
+
+A string marker used by the state-sync workflow to recognize blocked comments left by Jules.
+
+If an issue comment contains this marker while the issue is in progress, JulesOps should move the issue to the configured blocked state.
+
+---
+
+# 7. `issue_completion.close_on_merge`
+
+```yaml
+issue_completion:
+  close_on_merge: true
+```
+
+Whether JulesOps should automatically close the linked issue when the PR merges.
+
+If `false`, the workflow may still mark the issue `done` but leave the issue open for a human closer.
+
+---
+
+# 8. Future / likely additions
+
+The following fields are plausible extensions but are not yet standardized in the first-pass kit:
+
+## Pull request policy
+```yaml
+pull_request:
+  require_issue_link: true
+  target_base_branch_only: true
+```
+
+Potential future meaning:
+- require the PR body to link a tracked issue
+- ensure Jules-created PRs target the configured base branch
+
+## Retry / watchdog policy
+```yaml
+watchdog:
+  stale_in_progress_hours: 12
+  stale_review_hours: 72
+```
+
+Potential future meaning:
+- thresholds for stale issue detection
+- reminder or requeue policy
+
+## Completion comment behavior
+```yaml
+completion:
+  require_issue_comment_summary: true
+```
+
+Potential future meaning:
+- require or validate that Jules leaves a completion summary on the issue
+
+---
+
+# 9. Validation expectations for v1
+
+A repository adopting JulesOps should ensure:
+- the YAML parses correctly
+- all referenced instruction paths exist
+- the configured labels actually exist in the repository
+- the configured base branch exists
+
+The first-pass workflows do not yet perform exhaustive schema validation. They assume the repository owner has configured the contract sensibly.
+
+---
+
+# 10. Reference example
+
+See `examples/aggregator/julesops.yml` for a concrete config example based on the current Aggregator dogfood setup.
