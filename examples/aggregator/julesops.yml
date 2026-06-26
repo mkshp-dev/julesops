@@ -2,7 +2,7 @@ julesops:
   enabled: true
 
   repository:
-    base_branch: main
+    base_branch: Dev
 
   queue:
     queue_label: jules-queue
@@ -26,6 +26,6 @@ julesops:
   issue_completion:
     close_on_merge: true
 
-  pull_request:
-    require_issue_link: true
-    target_base_branch_only: true
+  watchdog:
+    stale_in_progress_hours: 24
+    stale_review_hours: 72

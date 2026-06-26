@@ -1,16 +1,18 @@
 # Aggregator example
 
-This directory will hold a concrete example of adopting JulesOps in the `Aggregator` repository.
+This directory shows what an adopting repository contributes alongside the reusable JulesOps workflow kit.
 
-Planned contents:
+Files:
 
-- `julesops.yml` example configuration
-- `jules-repo.md` repository-specific Jules instructions for Aggregator
-- notes on how the existing Aggregator workflows map into the reusable JulesOps workflow kit
+- `julesops.yml` is an example repository configuration for Aggregator.
+- `jules-repo.md` is example repository-specific Jules guidance for a Supabase-heavy codebase.
 
-The Aggregator repo is the first dogfooding target because it already has:
+The reusable files themselves still come from the JulesOps source kit:
 
-- a structured Jules issue template
-- a dispatch workflow
-- a state-sync workflow
-- repository-specific Jules instructions for a Supabase-heavy codebase
+- `templates/jules-core.md`
+- `templates/jules-task.yml`
+- `workflows/jules-dispatch.yml`
+- `workflows/jules-state-sync.yml`
+- `workflows/jules-watchdog.yml`
+
+To install the current kit into an Aggregator-like repository, run the installer from the JulesOps repo and then adapt the generated `.github/jules-repo.md` using the example in this directory.

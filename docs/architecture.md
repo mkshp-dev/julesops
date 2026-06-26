@@ -96,7 +96,7 @@ A GitHub Action that reacts to:
 
 It updates issue labels and state based on the JulesOps state machine.
 
-## 3.6 Watchdog workflow (next step after dispatch + sync)
+## 3.6 Watchdog workflow
 A scheduled workflow that detects stale active jobs, for example:
 - issue stuck in `in_progress` for too long without PR or comment activity
 - issue stuck in `review` for too long
@@ -199,7 +199,7 @@ Once those are stable across multiple repos, a GitHub App becomes a packaging an
 ├─ workflows/
 │  ├─ jules-dispatch.yml
 │  ├─ jules-state-sync.yml
-│  └─ jules-watchdog.yml   # later
+│  └─ jules-watchdog.yml
 ├─ jules-core.md           # from JulesOps
 ├─ jules-repo.md           # repo-specific
 └─ julesops.yml            # repo config
@@ -210,17 +210,16 @@ Once those are stable across multiple repos, a GitHub App becomes a packaging an
 # 9. Near-term implementation plan
 
 ## Phase 1
-- port dispatch workflow from Aggregator into JulesOps
-- port state-sync workflow from Aggregator into JulesOps
-- add first-pass support for `.github/julesops.yml`
-- add explicit `status:failed`
+- keep the workflow kit installable from this source repository
+- validate canonical templates, workflows, and examples
+- test installation into external repositories rather than self-dogfooding this repo
 
 ## Phase 2
-- add watchdog workflow
 - add retry / requeue flow
-- dogfood in Aggregator
+- tighten issue to PR to Jules correlation rules
+- validate target branch and required issue links
 
 ## Phase 3
-- adopt in a second repo
+- adopt in multiple external repositories
 - refine config contract and prompt protocol
-- only then evaluate backend + GitHub App work
+- evaluate reusable actions, GitHub App packaging, and hosted control plane work

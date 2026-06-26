@@ -241,4 +241,4 @@ The first-pass workflows do not yet perform exhaustive schema validation. They a
 
 # 11. Reference example
 
-See `examples/aggregator/julesops.yml` for a concrete config example based on the current Aggregator dogfood setup.
+See `examples/aggregator/julesops.yml` for a concrete config example based on an Aggregator-style adopting repository.

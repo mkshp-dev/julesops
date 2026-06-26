@@ -25,3 +25,7 @@ julesops:
 
   issue_completion:
     close_on_merge: true
+
+  watchdog:
+    stale_in_progress_hours: 24
+    stale_review_hours: 72

@@ -149,7 +149,7 @@ The current state machine does **not** yet include dedicated states for:
 - `cancelled`
 - `stale-review`
 
-Those may become useful later, but the current dogfood result suggests the six-state model is a good starting point.
+Those may become useful later, but the six-state model is the current starting point for the installable workflow kit.
 
 ---
 
