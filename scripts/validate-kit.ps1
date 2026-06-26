@@ -233,7 +233,9 @@ $kitFiles = @(
   "workflows/jules-state-sync.yml",
   "workflows/jules-watchdog.yml",
   "examples/aggregator/julesops.yml",
-  "examples/aggregator/jules-repo.md"
+  "examples/aggregator/jules-repo.md",
+  "scripts/bootstrap-labels.ps1",
+  "examples/fixture-basic/README.md"
 )
 
 foreach ($file in $kitFiles) {
@@ -263,6 +265,20 @@ if ($TargetRepo) {
   }
 
   Validate-JulesOpsConfig (Join-Path $targetRoot ".github/julesops.yml") $targetRoot
+
+  # Verify version markers exist in all fully kit-managed installed files
+  $versionCheckedFiles = @(
+    ".github/jules-core.md",
+    ".github/julesops.yml",
+    ".github/ISSUE_TEMPLATE/jules-task.yml",
+    ".github/workflows/jules-dispatch.yml",
+    ".github/workflows/jules-state-sync.yml",
+    ".github/workflows/jules-watchdog.yml"
+  )
+
+  foreach ($file in $versionCheckedFiles) {
+    Assert-Contains (Join-Path $targetRoot $file) "JulesOps kit version" "Installed file '$file' is missing the JulesOps version marker comment."
+  }
 }
 
 Write-Host "JulesOps kit validation passed."
