@@ -48,7 +48,7 @@ The long-term product goal is to make JulesOps available through GitHub Marketpl
    - multi-repo management and reporting
    - hosted setup / upgrade management
 
-See [docs/marketplace-roadmap.md](docs/marketplace-roadmap.md) for the open-core boundary.
+See [docs/marketplace-roadmap.md](docs/marketplace-roadmap.md) for the open-core boundary and [docs/development-to-marketplace-release.md](docs/development-to-marketplace-release.md) for the release plan.
 
 ## Repository layout
 

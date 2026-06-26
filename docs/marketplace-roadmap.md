@@ -38,3 +38,7 @@ Paid features should focus on operating Jules across repositories:
 ## Product rule
 
 Do not move basic single-repository orchestration behind the paid layer. The paid product should make JulesOps easier to operate at scale, not make the core workflow dependent on hosted services.
+
+## Release plan
+
+See [development-to-marketplace-release.md](development-to-marketplace-release.md) for the development sequence from workflow kit to Marketplace launch.
