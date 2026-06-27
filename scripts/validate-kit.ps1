@@ -155,6 +155,12 @@ function Validate-JulesOpsConfig {
   if ($null -eq $staleReview -or $staleReview -notmatch '^\d+$' -or [int]$staleReview -lt 1) {
     throw "Invalid 'julesops.watchdog.stale_review_hours' in config: '$staleReview'. Must be a positive integer."
   }
+
+  # 10. pull_request policy
+  $targetBaseBranchOnly = Get-YamlValue $ConfigPath "julesops.pull_request.target_base_branch_only"
+  if ($null -ne $targetBaseBranchOnly -and $targetBaseBranchOnly -ne "true" -and $targetBaseBranchOnly -ne "false") {
+    throw "Invalid 'julesops.pull_request.target_base_branch_only' in config: '$targetBaseBranchOnly'. Must be true or false."
+  }
   
   # Environment validation checks if targeting a repo
   if ($RepoRoot) {

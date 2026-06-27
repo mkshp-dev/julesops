@@ -50,12 +50,16 @@ jobs:
               raw = yaml.safe_load(f) or {}
 
           cfg = raw.get("julesops", {})
+          repo = cfg.get("repository", {})
+          pr_policy = cfg.get("pull_request", {})
           states = cfg.get("states", {})
           queue = cfg.get("queue", {})
           issue_completion = cfg.get("issue_completion", {})
           blocked_comment = cfg.get("blocked_comment", {})
 
           values = {
+              "base_branch": repo.get("base_branch", "main"),
+              "target_base_branch_only": str(pr_policy.get("target_base_branch_only", False)).lower(),
               "queue_label": queue.get("queue_label", "jules-queue"),
               "status_in_progress": states.get("in_progress", "status:in-progress"),
               "status_review": states.get("review", "status:review"),
@@ -107,11 +111,44 @@ jobs:
 
           echo "is_jules=$is_jules" >> "$GITHUB_OUTPUT"
 
-      - name: Move issue to review when PR opens
+      - name: Validate PR target base branch
+        id: validate_target_branch
         if: >
           steps.linked_issue.outputs.found == 'true' &&
           steps.issue_meta.outputs.is_jules == 'true' &&
           (github.event.action == 'opened' || github.event.action == 'reopened')
+        shell: bash
+        env:
+          PR_TARGET: ${{ github.event.pull_request.base.ref }}
+          EXPECTED_TARGET: ${{ steps.config.outputs.base_branch }}
+          TARGET_BRANCH_ONLY: ${{ steps.config.outputs.target_base_branch_only }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          ISSUE_NUMBER: ${{ steps.linked_issue.outputs.issue_number }}
+        run: |
+          set -euo pipefail
+
+          if [ "$TARGET_BRANCH_ONLY" = "true" ] && [ "$PR_TARGET" != "$EXPECTED_TARGET" ]; then
+            echo "Validation failed: PR target branch '$PR_TARGET' does not match configured base branch '$EXPECTED_TARGET'."
+            echo "is_valid=false" >> "$GITHUB_OUTPUT"
+
+            # Comment on the PR
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \
+              --body "⚠️ **JulesOps Validation Warning**: This pull request targets branch \`$PR_TARGET\`, but the repository's configured base branch is \`$EXPECTED_TARGET\`. Please retarget this PR to \`$EXPECTED_TARGET\` to proceed."
+
+            # Comment on the issue
+            gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" \
+              --body "⚠️ **JulesOps Validation Warning**: Linked PR #$PR_NUMBER targets \`$PR_TARGET\`, which differs from the configured base branch \`$EXPECTED_TARGET\`. Moving this issue to blocked status."
+          else
+            echo "PR target branch is valid."
+            echo "is_valid=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Move issue to review when PR opens
+        if: >
+          steps.linked_issue.outputs.found == 'true' &&
+          steps.issue_meta.outputs.is_jules == 'true' &&
+          (github.event.action == 'opened' || github.event.action == 'reopened') &&
+          steps.validate_target_branch.outputs.is_valid == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -124,6 +161,25 @@ jobs:
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_IN_PROGRESS" || true
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_BLOCKED" || true
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_REVIEW" || true
+
+      - name: Move issue to blocked when PR target branch validation fails
+        if: >
+          steps.linked_issue.outputs.found == 'true' &&
+          steps.issue_meta.outputs.is_jules == 'true' &&
+          (github.event.action == 'opened' || github.event.action == 'reopened') &&
+          steps.validate_target_branch.outputs.is_valid == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ISSUE_NUMBER="${{ steps.linked_issue.outputs.issue_number }}"
+          STATUS_IN_PROGRESS="${{ steps.config.outputs.status_in_progress }}"
+          STATUS_REVIEW="${{ steps.config.outputs.status_review }}"
+          STATUS_BLOCKED="${{ steps.config.outputs.status_blocked }}"
+
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_IN_PROGRESS" || true
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_REVIEW" || true
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_BLOCKED" || true
 
       - name: Mark issue done and close it when PR is merged
         if: >

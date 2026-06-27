@@ -188,22 +188,38 @@ How long an issue may remain in `review` without GitHub activity before the watc
 ### Current v1 behavior
 The watchdog is currently **comment-only**. It does not automatically requeue, relabel, or close issues.
 
+# 9. `pull_request`
+
+```yaml
+pull_request:
+  target_base_branch_only: true
+```
+
+Configures validations applied when a pull request linked to a Jules issue is opened or reopened.
+
+## `pull_request.target_base_branch_only`
+
+Whether JulesOps should validate that a pull request linked to a Jules issue targets the repository's configured `repository.base_branch`.
+
+If `true` and the pull request targets a different branch, JulesOps will:
+- Comment on the pull request alerting the author.
+- Comment on the linked issue.
+- Mark the issue as `blocked` instead of moving it to the `review` state.
+
 ---
 
-# 9. Future / likely additions
+# 10. Future / likely additions
 
-The following fields are plausible extensions but are not yet standardized in the first-pass kit:
+The following fields are plausible extensions but are not yet standardized in the active spec:
 
 ## Pull request policy
 ```yaml
 pull_request:
   require_issue_link: true
-  target_base_branch_only: true
 ```
 
 Potential future meaning:
 - require the PR body to link a tracked issue
-- ensure Jules-created PRs target the configured base branch
 
 ## Retry policy
 ```yaml
@@ -227,7 +243,7 @@ Potential future meaning:
 
 ---
 
-# 10. Validation expectations for v1
+# 11. Validation expectations for v1
 
 A repository adopting JulesOps should ensure:
 - the YAML parses correctly
@@ -239,6 +255,6 @@ The first-pass workflows do not yet perform exhaustive schema validation. They a
 
 ---
 
-# 11. Reference example
+# 12. Reference example
 
 See `examples/aggregator/julesops.yml` for a concrete config example based on an Aggregator-style adopting repository.

@@ -23,6 +23,9 @@ julesops:
   blocked_comment:
     marker: "## Blocked"
 
+  pull_request:
+    target_base_branch_only: true
+
   issue_completion:
     close_on_merge: true
 
