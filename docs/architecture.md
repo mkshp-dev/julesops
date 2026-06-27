@@ -257,3 +257,46 @@ JulesOps GitHub App supports two operational modes depending on adopter preferen
 - **Behavior**: The App actively manages the installation and updates of the JulesOps workflows (`jules-*.yml`) and config files directly, ensuring zero-maintenance synchronization.
 - **Permissions**: Requires `Read & Write` contents permission.
 - **Upgrades**: Upgrades to core workflows are automatically pushed to the target repository via commits created by the App.
+
+## 10.4 Webhook Handler Design
+
+To support real-time state synchronization, self-healing, and dashboard monitoring in Phase 4, the hosted App backend will ingest GitHub webhooks. The handlers are designed as follows:
+
+### 10.4.1 `installation` / `installation_repositories`
+- **Events**: `created`, `deleted`, `added`, `removed`.
+- **Payload Data**: Installation ID, Account (organization/user) metadata, lists of added/removed repository IDs.
+- **Handler Action**:
+  - On `created` / `added`: Initialize or update adoption records in the database, kick off metadata sync, and trigger a welcoming notification.
+  - On `deleted` / `removed`: Clean up adoption records or mark repositories as inactive.
+
+### 10.4.2 `issues`
+- **Events**: `opened`, `edited`, `labeled`, `unlabeled`, `closed`, `reopened`.
+- **Payload Data**: Issue object, labels list, sender association.
+- **Handler Action**:
+  - If the queue label is added: Validate issue config rules, verify queue limit constraints, and trigger the dispatch scheduler.
+  - On status label edits: Sync state transitions in the backend database to maintain telemetry.
+
+### 10.4.3 `pull_request`
+- **Events**: `opened`, `reopened`, `closed`, `synchronize`.
+- **Payload Data**: Pull request object (body description, base branch, merge status), sender association.
+- **Handler Action**:
+  - Check for linked issue references in the PR description (e.g. `Closes #123`).
+  - Run validations: target base branch verification and linked issue verification. If invalid, post warnings on the PR and set the linked issue state to `blocked`.
+  - On merge (`closed` + `merged=true`): Transition the linked issue to `done` and trigger auto-closure.
+  - On close without merge: Transition the linked issue to `blocked`.
+
+### 10.4.4 `issue_comment`
+- **Events**: `created`.
+- **Payload Data**: Comment body text, issue context, sender association.
+- **Handler Action**:
+  - Check if commenter is authorized (maintainer role).
+  - Parse comment body:
+    - If command is `/jules retry` or `/jules requeue`: Reset labels to `todo` and queue the task for immediate dispatch.
+    - If comment contains the `## Blocked` marker (and comes from Jules): Transition the issue to `blocked`.
+
+### 10.4.5 `workflow_run`
+- **Events**: `completed`.
+- **Payload Data**: Workflow name (`Jules Dispatch`), run conclusion (success, failure, cancelled), run URL.
+- **Handler Action**:
+  - If dispatch workflow fails: Transition the task issue to `failed` and log the execution error detail for maintainer debugging.
+  - If sync/watchdog runs fail: Log telemetry errors and notify operators.
