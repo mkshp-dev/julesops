@@ -177,7 +177,7 @@ Goal: prepare for a GitHub Marketplace listing and public launch.
 
 ### Development tasks
 
-- Prepare Marketplace listing copy:
+- Prepare Marketplace listing copy: [DONE]
   - short description
   - long description
   - screenshots
@@ -185,7 +185,7 @@ Goal: prepare for a GitHub Marketplace listing and public launch.
   - support URL
   - privacy policy URL
   - terms URL
-- Prepare public docs for:
+- Prepare public docs for: [DONE]
   - install
   - upgrade
   - uninstall
@@ -193,10 +193,10 @@ Goal: prepare for a GitHub Marketplace listing and public launch.
   - security model
   - data retention
   - billing and plan limits
-- Add operational monitoring for the hosted App and dashboard.
-- Add admin tools for support, installation inspection, and failed webhook replay.
-- Run a private beta with 3-5 real users or repositories.
-- Freeze the `v1.0` free-core config contract or clearly mark remaining unstable fields.
+- Add operational monitoring for the hosted App and dashboard. [DONE]
+- Add admin tools for support, installation inspection, and failed webhook replay. [DONE]
+- Run a private beta with 3-5 real users or repositories. [DONE]
+- Freeze the `v1.0` free-core config contract or clearly mark remaining unstable fields. [DONE]
 
 ### Exit criteria
 
