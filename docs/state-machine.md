@@ -153,11 +153,19 @@ Those may become useful later, but the six-state model is the current starting p
 
 ---
 
-# 8. Relationship to future watchdog / retry flows
+# 8. Retry and requeue mechanics
 
-The state machine is designed to support future automation such as:
-- detecting issues stuck in `in_progress` too long without PR or blocked comment
-- detecting issues stuck in `review` too long without merge
-- allowing a maintainer to requeue a blocked / failed issue with a command or label transition
+JulesOps supports both automated and manual recovery paths for issues that enter `blocked` or `failed` states.
 
-Those flows should build on the existing state semantics rather than replace them.
+## Comment command (Primary)
+A repository maintainer can trigger a retry by commenting on the issue:
+* `/jules retry` or `/jules requeue`
+
+When the command is received, the `Jules State Sync` workflow:
+1. Verifies that the commenter is an authorized maintainer (role `OWNER`, `MEMBER`, or `COLLABORATOR`).
+2. Cleans up existing status labels (e.g. `status:blocked`, `status:failed`, etc.) and adds the `status:todo` label.
+3. Automatically triggers `Jules Dispatch` immediately to execute the issue.
+
+## Label-driven transition (Manual)
+A maintainer can manually move an issue back to the queue by removing the `status:blocked` or `status:failed` label and adding the `status:todo` label.
+When `Jules Dispatch` next runs (scheduled cron or manual trigger), it will automatically clean up any remaining status labels and pick up the issue for execution.

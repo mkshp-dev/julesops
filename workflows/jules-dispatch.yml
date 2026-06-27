@@ -57,6 +57,7 @@ jobs:
               "status_review": states.get("review", "status:review"),
               "status_blocked": states.get("blocked", "status:blocked"),
               "status_failed": states.get("failed", "status:failed"),
+              "status_done": states.get("done", "status:done"),
               "core_instructions": instructions.get("core", ".github/jules-core.md"),
               "repo_instructions": instructions.get("repo", ".github/jules-repo.md"),
           }
@@ -226,8 +227,17 @@ jobs:
           ISSUE_NUMBER="${{ steps.queue.outputs.issue_number }}"
           STATUS_TODO="${{ steps.config.outputs.status_todo }}"
           STATUS_IN_PROGRESS="${{ steps.config.outputs.status_in_progress }}"
+          STATUS_REVIEW="${{ steps.config.outputs.status_review }}"
+          STATUS_BLOCKED="${{ steps.config.outputs.status_blocked }}"
+          STATUS_FAILED="${{ steps.config.outputs.status_failed }}"
+          STATUS_DONE="${{ steps.config.outputs.status_done }}"
 
-          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_TODO" || true
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" \
+            --remove-label "$STATUS_TODO" \
+            --remove-label "$STATUS_REVIEW" \
+            --remove-label "$STATUS_BLOCKED" \
+            --remove-label "$STATUS_FAILED" \
+            --remove-label "$STATUS_DONE" || true
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_IN_PROGRESS"
 
       - name: Mark issue failed if dispatch or invocation failed

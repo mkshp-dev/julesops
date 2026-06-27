@@ -14,6 +14,7 @@ permissions:
   contents: read
   issues: write
   pull-requests: read
+  actions: write
 
 env:
   GH_TOKEN: ${{ github.token }}
@@ -252,3 +253,59 @@ jobs:
 
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_IN_PROGRESS" || true
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_BLOCKED" || true
+
+      - name: Process retry or requeue command from maintainer
+        if: >
+          steps.issue_meta.outputs.is_jules == 'true' &&
+          (
+            contains(github.event.comment.body, '/jules') ||
+            contains(github.event.comment.body, '/Jules')
+          )
+        shell: bash
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          AUTHOR_ASSOC: ${{ github.event.comment.author_association }}
+          COMMENTER: ${{ github.event.comment.user.login }}
+        run: |
+          set -euo pipefail
+
+          # Normalize comment body to lowercase and trim whitespace
+          BODY_LOWER=$(echo "${{ github.event.comment.body }}" | tr '[:upper:]' '[:lower:]' | xargs)
+
+          if [[ "$BODY_LOWER" != "/jules retry" && "$BODY_LOWER" != "/jules requeue" ]]; then
+            echo "Not a recognized retry command. Skipping."
+            exit 0
+          fi
+
+          # Verify commenter is a maintainer (has OWNER, MEMBER, or COLLABORATOR role)
+          if [[ "$AUTHOR_ASSOC" != "OWNER" && "$AUTHOR_ASSOC" != "MEMBER" && "$AUTHOR_ASSOC" != "COLLABORATOR" ]]; then
+            echo "Unauthorized user @$COMMENTER attempted to retry issue."
+            gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" \
+              --body "Permission denied: Only repository maintainers can requeue/retry issues."
+            exit 0
+          fi
+
+          STATUS_TODO="${{ steps.config.outputs.status_todo }}"
+          STATUS_IN_PROGRESS="${{ steps.config.outputs.status_in_progress }}"
+          STATUS_REVIEW="${{ steps.config.outputs.status_review }}"
+          STATUS_BLOCKED="${{ steps.config.outputs.status_blocked }}"
+          STATUS_FAILED="${{ steps.config.outputs.status_failed }}"
+          STATUS_DONE="${{ steps.config.outputs.status_done }}"
+
+          echo "Requeueing issue #$ISSUE_NUMBER..."
+
+          # Remove existing status labels and add todo label
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" \
+            --remove-label "$STATUS_IN_PROGRESS" \
+            --remove-label "$STATUS_REVIEW" \
+            --remove-label "$STATUS_BLOCKED" \
+            --remove-label "$STATUS_FAILED" \
+            --remove-label "$STATUS_DONE" || true
+
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_TODO"
+
+          gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" \
+            --body "Issue requeued by @$COMMENTER. Triggering Jules Dispatch..."
+
+          # Trigger the dispatch workflow
+          gh workflow run jules-dispatch.yml --repo "${{ github.repository }}"
