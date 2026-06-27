@@ -388,3 +388,52 @@ To maintain long-term performance, audit capabilities, and storage reliability o
   - Jobs updated more than 90 days ago, along with their associated `attempts` and `events` logs, are automatically partitioned out of the hot tables.
   - They are serialized into compressed parquet/JSON archives and moved to object storage (e.g. S3 or GCS) for historical reporting and compliance.
 - **Payload Sanitization**: Prior to cold storage export, webhook payloads in the `events` table are automatically sanitized to remove temporary API tokens, secrets, or personal identifiable information (PII).
+
+---
+
+# 11. Webhook & Email Notification Hooks (Phase 5)
+
+To alert operators immediately when automation fails or runs stale, the JulesOps control plane supports configurable notification destinations.
+
+## 11.1 Trigger Conditions
+- **Failed Run**: Triggered when a `Jules Dispatch` workflow run fails, exits with an error code, or is cancelled.
+- **Stale Active Job**: Triggered by the watchdog script when a task issue remains in `in-progress` or `review` status without label updates, commit activity, or comment updates beyond a defined threshold (default: 24 hours).
+
+## 11.2 Configuration Schema (`.github/julesops.yml`)
+Adopters configure notification rules under the `notifications` key in their config file:
+
+```yaml
+notifications:
+  on_failure:
+    - type: email
+      to: dev-alerts@my-company.com
+    - type: webhook
+      url: https://hooks.slack.com/services/T0000/B0000/XXXXXX
+  on_stale:
+    - type: webhook
+      url: https://hooks.slack.com/services/T0000/B0000/XXXXXX
+    threshold_hours: 24
+```
+
+## 11.3 Webhook Payload Format
+Webhook notifications send a POST request with the following JSON structure:
+
+```json
+{
+  "event": "julesops.notification",
+  "repository": "my-org/api-gateway",
+  "issue": {
+    "number": 201,
+    "title": "Refactor route mapping modules",
+    "url": "https://github.com/my-org/api-gateway/issues/201"
+  },
+  "trigger": "failed_dispatch",
+  "details": {
+    "attempt_number": 3,
+    "workflow_run_id": 987654321,
+    "workflow_run_url": "https://github.com/my-org/api-gateway/actions/runs/987654321",
+    "error_summary": "Process exited with code 1 (JULES_API_KEY environment variable missing)"
+  },
+  "timestamp": "2026-06-27T10:45:00Z"
+}
+```
