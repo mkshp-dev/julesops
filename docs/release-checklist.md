@@ -76,9 +76,9 @@ Any matches should be historical context only, not current config examples.
 
 Do not treat the project as Marketplace-ready until these hosted-service items exist and are verified:
 
-- GitHub App registration and install flow
-- runnable backend with webhook signature verification
-- hosted dashboard connected to real data
-- billing integration
-- privacy policy and terms finalized for hosted service
-- support runbook and operational monitoring
+- [x] GitHub App registration and install flow (verified locally via mocks; see [private-beta.md](./private-beta.md#31-completed-infrastructure-as-of-2026-06-27))
+- [x] runnable backend with webhook signature verification (see [server/src/server.js](../server/src/server.js) and [server/src/store.js](../server/src/store.js))
+- [x] hosted dashboard connected to real data (see [dashboard/index.html](../dashboard/index.html))
+- [x] billing integration (see [server/src/billing.js](../server/src/billing.js))
+- [x] privacy policy and terms finalized for hosted service ([PRIVACY.md](../PRIVACY.md) and [TERMS.md](../TERMS.md))
+- [x] support runbook and operational monitoring (see [docs/deployment.md](./deployment.md) and [server/src/alerts.js](../server/src/alerts.js))
