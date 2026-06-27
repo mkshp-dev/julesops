@@ -239,6 +239,7 @@ jobs:
             --remove-label "$STATUS_FAILED" \
             --remove-label "$STATUS_DONE" || true
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_IN_PROGRESS"
+          gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" --body "Jules has been successfully dispatched to work on this issue. Transitioning status to \`$STATUS_IN_PROGRESS\`."
 
       - name: Mark issue failed if dispatch or invocation failed
         if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true' && failure()

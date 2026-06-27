@@ -231,6 +231,7 @@ jobs:
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_REVIEW" || true
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_BLOCKED" || true
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_DONE" || true
+          gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" --body "The linked Jules PR was merged. Transitioning status to \`$STATUS_DONE\`."
 
           if [ "${{ steps.config.outputs.close_on_merge }}" = "true" ]; then
             gh issue close "$ISSUE_NUMBER" --repo "${{ github.repository }}" --comment "Closing automatically because the linked Jules PR was merged."
@@ -339,6 +340,7 @@ jobs:
 
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_IN_PROGRESS" || true
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_BLOCKED" || true
+          gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" --body "Jules reported a blocked state. Marking this issue as \`$STATUS_BLOCKED\` for maintainer review."
 
       - name: Process retry or requeue command from maintainer
         if: >
