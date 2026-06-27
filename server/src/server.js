@@ -9,6 +9,7 @@ const store = require('./store');
 const { handleInstallationEvent, handleInstallationRepositoriesEvent } = require('./installation-handlers');
 const { sessionMiddleware } = require('./session');
 const { handleOAuthStart, handleOAuthCallback, handleLogout } = require('./oauth');
+const { handleCheckout, handleStripeWebhook, handleBillingPortal } = require('./billing');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -335,6 +336,25 @@ async function handleRequest(req, res) {
 
     if (req.method === 'POST' && pathname === '/api/webhooks') {
       await handleWebhook(req, res);
+      return;
+    }
+
+    // ── Billing routes ────────────────────────────────────────────────
+
+    if (req.method === 'POST' && pathname === '/billing/checkout') {
+      const rawBody = await readBody(req);
+      await handleCheckout(req, res, rawBody);
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/billing/webhook') {
+      const rawBody = await readBody(req);
+      await handleStripeWebhook(req, res, rawBody);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/billing/portal') {
+      await handleBillingPortal(req, res);
       return;
     }
 
