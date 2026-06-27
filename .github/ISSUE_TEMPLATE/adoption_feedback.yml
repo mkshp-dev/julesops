@@ -1,0 +1,33 @@
+name: Adoption Feedback
+description: Provide feedback on your experience adopting and using JulesOps
+title: "[Feedback]: "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We want to know how JulesOps is working for you! Please share your adoption experience.
+  - type: textarea
+    id: experience
+    attributes:
+      label: Adoption Experience
+      description: How was the installation and setup process? Did you run into any hurdles?
+      placeholder: Tell us about your setup process...
+    validations:
+      required: true
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Benefits & Value
+      description: What value has JulesOps brought to your workflow or team?
+      placeholder: How did it help...
+    validations:
+      required: true
+  - type: textarea
+    id: improvement
+    attributes:
+      label: Areas for Improvement
+      description: What could be made easier or better documented?
+      placeholder: Suggestions for improvement...
+    validations:
+      required: false
