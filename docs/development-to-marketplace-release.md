@@ -124,7 +124,7 @@ Goal: introduce a GitHub App only for capabilities that are awkward or unreliabl
 - Design webhook handlers for issue, pull request, issue comment, workflow run, and installation events. [DONE]
 - Define a hosted job model for observing state without replacing GitHub as the source of truth. [DONE]
 - Add a minimal backend schema for installations, repositories, jobs, attempts, and events. [DONE]
-- Add local development docs for the App and webhook processing.
+- Add local development docs for the App and webhook processing. [DONE]
 
 ### Exit criteria
 
