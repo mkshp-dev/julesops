@@ -161,6 +161,10 @@ function Validate-JulesOpsConfig {
   if ($null -ne $targetBaseBranchOnly -and $targetBaseBranchOnly -ne "true" -and $targetBaseBranchOnly -ne "false") {
     throw "Invalid 'julesops.pull_request.target_base_branch_only' in config: '$targetBaseBranchOnly'. Must be true or false."
   }
+  $requireIssueLink = Get-YamlValue $ConfigPath "julesops.pull_request.require_issue_link"
+  if ($null -ne $requireIssueLink -and $requireIssueLink -ne "true" -and $requireIssueLink -ne "false") {
+    throw "Invalid 'julesops.pull_request.require_issue_link' in config: '$requireIssueLink'. Must be true or false."
+  }
   
   # Environment validation checks if targeting a repo
   if ($RepoRoot) {

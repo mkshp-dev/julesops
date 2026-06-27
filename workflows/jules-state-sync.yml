@@ -60,6 +60,7 @@ jobs:
           values = {
               "base_branch": repo.get("base_branch", "main"),
               "target_base_branch_only": str(pr_policy.get("target_base_branch_only", False)).lower(),
+              "require_issue_link": str(pr_policy.get("require_issue_link", False)).lower(),
               "queue_label": queue.get("queue_label", "jules-queue"),
               "status_in_progress": states.get("in_progress", "status:in-progress"),
               "status_review": states.get("review", "status:review"),
@@ -111,12 +112,39 @@ jobs:
 
           echo "is_jules=$is_jules" >> "$GITHUB_OUTPUT"
 
+      - name: Validate linked issue requirement
+        id: validate_linked_issue
+        if: >
+          github.event.action == 'opened' || github.event.action == 'reopened'
+        shell: bash
+        env:
+          REQUIRE_LINK: ${{ steps.config.outputs.require_issue_link }}
+          LINK_FOUND: ${{ steps.linked_issue.outputs.found }}
+          IS_JULES: ${{ steps.issue_meta.outputs.is_jules }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          if [ "$REQUIRE_LINK" = "true" ]; then
+            if [ "$LINK_FOUND" != "true" ] || [ "$IS_JULES" != "true" ]; then
+              echo "Validation failed: PR #$PR_NUMBER must reference a valid Jules issue."
+              gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \
+                --body "⚠️ **JulesOps Validation Warning**: This pull request must link to a tracked Jules task issue (e.g. \`Closes #123\` or \`Fixes #123\`). Please update the pull request description with a valid issue link."
+              echo "is_link_valid=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          echo "Linked issue validation passed."
+          echo "is_link_valid=true" >> "$GITHUB_OUTPUT"
+
       - name: Validate PR target base branch
         id: validate_target_branch
         if: >
           steps.linked_issue.outputs.found == 'true' &&
           steps.issue_meta.outputs.is_jules == 'true' &&
-          (github.event.action == 'opened' || github.event.action == 'reopened')
+          (github.event.action == 'opened' || github.event.action == 'reopened') &&
+          steps.validate_linked_issue.outputs.is_link_valid == 'true'
         shell: bash
         env:
           PR_TARGET: ${{ github.event.pull_request.base.ref }}
@@ -148,6 +176,7 @@ jobs:
           steps.linked_issue.outputs.found == 'true' &&
           steps.issue_meta.outputs.is_jules == 'true' &&
           (github.event.action == 'opened' || github.event.action == 'reopened') &&
+          steps.validate_linked_issue.outputs.is_link_valid == 'true' &&
           steps.validate_target_branch.outputs.is_valid == 'true'
         shell: bash
         run: |
@@ -167,6 +196,7 @@ jobs:
           steps.linked_issue.outputs.found == 'true' &&
           steps.issue_meta.outputs.is_jules == 'true' &&
           (github.event.action == 'opened' || github.event.action == 'reopened') &&
+          steps.validate_linked_issue.outputs.is_link_valid == 'true' &&
           steps.validate_target_branch.outputs.is_valid == 'false'
         shell: bash
         run: |

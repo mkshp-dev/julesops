@@ -193,6 +193,7 @@ The watchdog is currently **comment-only**. It does not automatically requeue, r
 ```yaml
 pull_request:
   target_base_branch_only: true
+  require_issue_link: true
 ```
 
 Configures validations applied when a pull request linked to a Jules issue is opened or reopened.
@@ -206,20 +207,19 @@ If `true` and the pull request targets a different branch, JulesOps will:
 - Comment on the linked issue.
 - Mark the issue as `blocked` instead of moving it to the `review` state.
 
+## `pull_request.require_issue_link`
+
+Whether JulesOps should validate that a pull request linked to a Jules issue contains a valid closing reference to a tracked issue (e.g. `Closes #123` or `Fixes #123`).
+
+If `true` and no valid link is present, JulesOps will:
+- Comment on the pull request alerting the author.
+- Halt state transitions (the issue will not transition to `review`).
+
 ---
 
 # 10. Future / likely additions
 
 The following fields are plausible extensions but are not yet standardized in the active spec:
-
-## Pull request policy
-```yaml
-pull_request:
-  require_issue_link: true
-```
-
-Potential future meaning:
-- require the PR body to link a tracked issue
 
 ## Retry policy
 ```yaml
