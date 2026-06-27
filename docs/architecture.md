@@ -243,3 +243,17 @@ When transition packaging moves to a hosted GitHub App in Phase 4 to simplify in
 ## 10.2 Organization permissions
 
 No organization-wide read or write permissions are required, ensuring that the App's access boundaries are strictly isolated to the repositories where users explicitly install it.
+
+## 10.3 App installation & monitoring mode
+
+JulesOps GitHub App supports two operational modes depending on adopter preferences and security policies:
+
+### 10.3.1 Monitor Mode (Default / Recommended)
+- **Behavior**: The App acts purely as a monitoring, state-validation, and telemetry plane. It observes webhook events (issues, pull requests, comment creations, workflow runs) and populates the multi-repo operations dashboard, while execution remains fully managed by GitHub Actions inside the repository.
+- **Permissions**: Requires only `Read-only` contents permission (to read `.github/julesops.yml` and the instruction prompts).
+- **Upgrades**: When workflow kit updates are released, the App alerts maintainers on the dashboard that their workflows are out of date and prompts them to run `.\scripts\install-julesops.ps1 -Upgrade` locally.
+
+### 10.3.2 Auto-Upgrade/Install Mode (Opt-in)
+- **Behavior**: The App actively manages the installation and updates of the JulesOps workflows (`jules-*.yml`) and config files directly, ensuring zero-maintenance synchronization.
+- **Permissions**: Requires `Read & Write` contents permission.
+- **Upgrades**: Upgrades to core workflows are automatically pushed to the target repository via commits created by the App.

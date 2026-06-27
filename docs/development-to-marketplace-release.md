@@ -120,7 +120,7 @@ Goal: introduce a GitHub App only for capabilities that are awkward or unreliabl
   - pull requests: read/write
   - actions/workflows: read-only
   - contents: read (write only if App installs files directly)
-- Decide whether the App installs files, comments instructions, or only monitors existing workflow-kit installs.
+- Decide whether the App installs files, comments instructions, or only monitors existing workflow-kit installs. [DONE]
 - Design webhook handlers for issue, pull request, issue comment, workflow run, and installation events.
 - Define a hosted job model for observing state without replacing GitHub as the source of truth.
 - Add a minimal backend schema for installations, repositories, jobs, attempts, and events.
