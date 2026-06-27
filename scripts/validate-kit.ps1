@@ -253,8 +253,8 @@ $kitFiles = @(
   "workflows/jules-watchdog.yml",
   "examples/aggregator/julesops.yml",
   "examples/aggregator/jules-repo.md",
-  "scripts/bootstrap-labels.ps1",
-  "examples/fixture-basic/README.md"
+  "scripts/bootstrap-labels.ps1",`r`n  "scripts/test-fixture.ps1",
+  "examples/fixture-basic/README.md",`r`n  "examples/fixture-basic/repo/README.md",`r`n  "examples/fixture-basic/repo/src/app.txt"
 )
 
 foreach ($file in $kitFiles) {

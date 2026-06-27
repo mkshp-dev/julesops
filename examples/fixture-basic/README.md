@@ -1,8 +1,34 @@
 # Basic Test Fixture Repository
 
-This directory serves as a minimal adopting repository test fixture. It is used to test the JulesOps installer and validator scripts.
+This directory contains a minimal adopting repository fixture for repeatable JulesOps installer and validator tests.
 
-## Purpose
+## Layout
 
-1. **Installation Target**: Safe sandbox directory to test `scripts/install-julesops.ps1` runs.
-2. **Validation Target**: Verify that `scripts/validate-kit.ps1` parses, audits, and checks configs and local files correctly.
+```text
+examples/fixture-basic/
+├─ README.md
+└─ repo/
+   ├─ README.md
+   └─ src/app.txt
+```
+
+The `repo/` directory intentionally does **not** contain JulesOps-installed `.github` files. Test scripts copy it to a temporary directory, initialize Git, and run installer scenarios there.
+
+## Run the fixture smoke test
+
+From the JulesOps source repository:
+
+```powershell
+.\scripts\test-fixture.ps1
+```
+
+The smoke test covers:
+
+- dry-run install without writing files
+- fresh install
+- installed target validation
+- resolver execution
+- label bootstrap dry run
+- upgrade preserving `.github/julesops.yml`
+- force overwrite restoring the default generated config
+- expected validation failure for a missing configured base branch
