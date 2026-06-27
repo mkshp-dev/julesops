@@ -1,13 +1,13 @@
 # JulesOps Operational Monitoring & Admin Tools
 
-This document describes the planned operational monitoring capabilities, health checks, and admin tooling for the future hosted App and dashboard. These endpoints and admin APIs are design targets until a runnable backend exists in this repository.
+This document describes operational monitoring for the hosted App and dashboard. A minimal runnable backend skeleton now exists in `server/`; health, metrics, webhook ingestion, and read-only dashboard data endpoints are implemented there. Admin APIs, durable database storage, billing, and production alerting remain planned.
 
 ---
 
 ## 1. Operational Monitoring
 
 ### 1.1 Health Check Endpoints
-The future JulesOps backend should expose the following health check endpoints:
+The current server skeleton exposes these health check endpoints:
 
 | Endpoint | Description |
 | --- | --- |
@@ -19,7 +19,7 @@ The future JulesOps backend should expose the following health check endpoints:
 These endpoints should be polled by an external uptime monitor (e.g. UptimeRobot, Better Uptime) every 60 seconds.
 
 ### 1.2 Application Metrics
-The future backend should export the following Prometheus-compatible metrics at `/metrics`:
+The current server skeleton exports initial Prometheus-compatible metrics at `/metrics`; future production metrics should expand this list:
 
 | Metric | Description |
 | --- | --- |

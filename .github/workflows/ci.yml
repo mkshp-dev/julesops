@@ -48,3 +48,24 @@ jobs:
 
           .\scripts\install-julesops.ps1 -TargetRepo $target -BaseBranch master
           .\scripts\bootstrap-labels.ps1 -TargetRepo $target -DryRun
+  validate-server:
+    name: Validate hosted server skeleton
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start server and run smoke test
+        shell: pwsh
+        run: |
+          cd server
+          $env:GITHUB_WEBHOOK_SECRET="ci-secret"
+          $process = Start-Process -FilePath node -ArgumentList "src/server.js" -PassThru -WindowStyle Hidden
+          try {
+            Start-Sleep -Seconds 2
+            npm run smoke
+          }
+          finally {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+          }

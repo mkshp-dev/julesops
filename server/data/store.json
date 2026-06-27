@@ -1,0 +1,60 @@
+{
+  "organizations": [
+    {
+      "id": 1,
+      "login": "mkshp-dev",
+      "plan": "free"
+    }
+  ],
+  "repositories": [
+    {
+      "id": 1,
+      "organization": "mkshp-dev",
+      "full_name": "mkshp-dev/julesops",
+      "base_branch": "main",
+      "is_active": true
+    }
+  ],
+  "jobs": [
+    {
+      "id": "demo-job-1",
+      "repository": "mkshp-dev/julesops",
+      "issue_number": 1,
+      "issue_title": "Demo JulesOps task",
+      "current_status": "todo",
+      "attempt_number": 1,
+      "pr_number": null,
+      "branch_name": null,
+      "updated_at": "2026-06-27T00:00:00.000Z"
+    },
+    {
+      "id": "1e987cb1-6932-46a8-a83a-e098304fcc4e",
+      "attempt_number": 1,
+      "pr_number": null,
+      "branch_name": null,
+      "repository": "mkshp-dev/julesops",
+      "issue_number": 42,
+      "issue_title": "Smoke test issue",
+      "current_status": "todo",
+      "updated_at": "2026-06-27T14:08:00.019Z"
+    }
+  ],
+  "events": [
+    {
+      "id": "5bb583a7-05cd-4c9e-9da9-cf13511f5bdc",
+      "event_type": "issues",
+      "action": "opened",
+      "repository": "mkshp-dev/julesops",
+      "received_at": "2026-06-27T14:08:00.018Z",
+      "signature": "verified"
+    },
+    {
+      "id": "9c2aebfa-cb9e-49f4-a2e1-6c12f6666eb3",
+      "event_type": "issues",
+      "action": "opened",
+      "repository": "mkshp-dev/julesops",
+      "received_at": "2026-06-27T13:59:47.009Z",
+      "signature": "verified"
+    }
+  ]
+}

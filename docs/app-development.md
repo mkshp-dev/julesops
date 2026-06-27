@@ -1,6 +1,6 @@
 # GitHub App Local Development Guide
 
-This guide describes the planned local setup for the future **JulesOps GitHub App** and webhook processing backend. It is a design/development guide until a runnable backend exists in this repository.
+This guide describes local setup for the JulesOps GitHub App webhook processing backend. The repository now includes a minimal runnable backend skeleton in `server/`; GitHub App authentication, OAuth, billing, and production persistence are still future work.
 
 ---
 
@@ -48,21 +48,38 @@ Since GitHub cannot send webhooks directly to `localhost`, you must use a proxy 
 
 ## 3. Configure Local Environment
 
-Create an `.env` file in your local backend development directory with the following variables:
+For the current no-dependency server skeleton, set:
 
 ```env
 PORT=3000
-GITHUB_APP_ID=123456                        # Your Dev App ID
+HOST=127.0.0.1
 GITHUB_WEBHOOK_SECRET=my-local-webhook-secret-123
-GITHUB_PRIVATE_KEY_PATH=./path/to/private-key.pem
-DATABASE_URL=postgresql://localhost:5472/julesops_dev
+JULESOPS_DATA_DIR=./data
 ```
+
+Run locally:
+
+```powershell
+cd server
+$env:GITHUB_WEBHOOK_SECRET="my-local-webhook-secret-123"
+npm start
+```
+
+Run the smoke test from another terminal:
+
+```powershell
+cd server
+$env:GITHUB_WEBHOOK_SECRET="my-local-webhook-secret-123"
+npm run smoke
+```
+
+Future App work will add `GITHUB_APP_ID`, private key handling, installation tokens, OAuth, and database connection configuration.
 
 ---
 
-## 4. Testing Webhook Handlers (Future Backend)
+## 4. Testing Webhook Handlers
 
-When the backend implementation exists, verify your local setup with:
+Verify your local setup with:
 
 1. **Install Dev App**: Navigate to your GitHub App settings page, click **Install App**, and install it onto a test repository.
 2. **Launch Dev Server**: Start your local development backend server.

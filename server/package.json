@@ -1,0 +1,14 @@
+{
+  "name": "julesops-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimal JulesOps hosted control-plane backend skeleton",
+  "scripts": {
+    "start": "node src/server.js",
+    "smoke": "node scripts/smoke-test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

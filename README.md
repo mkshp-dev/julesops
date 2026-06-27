@@ -65,6 +65,7 @@ julesops/
 ├─ scripts/
 │  ├─ install-julesops.ps1
 │  └─ validate-kit.ps1
+├─ server/                 # hosted control-plane skeleton
 ├─ templates/
 │  ├─ jules-core.md
 │  ├─ jules-task.yml
