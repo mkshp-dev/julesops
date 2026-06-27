@@ -1,14 +1,19 @@
 {
   "name": "julesops-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Minimal JulesOps hosted control-plane backend skeleton",
+  "description": "JulesOps hosted control-plane backend",
   "scripts": {
     "start": "node src/server.js",
-    "smoke": "node scripts/smoke-test.js"
+    "smoke": "node scripts/smoke-test.js",
+    "migrate": "node scripts/migrate.js",
+    "test": "node --test src/__tests__/*.test.js"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "pg": "^8.13.3"
   },
   "license": "MIT"
 }
