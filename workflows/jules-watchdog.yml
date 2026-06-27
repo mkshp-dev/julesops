@@ -29,29 +29,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import yaml
-          with open('.github/julesops.yml', 'r', encoding='utf-8') as f:
-              raw = yaml.safe_load(f) or {}
-          cfg = raw.get('julesops', {})
-          queue = cfg.get('queue', {})
-          states = cfg.get('states', {})
-          watchdog = cfg.get('watchdog', {})
-          values = {
-              'enabled': str(cfg.get('enabled', True)).lower(),
-              'queue_label': queue.get('queue_label', 'jules-queue'),
-              'status_in_progress': states.get('in_progress', 'status:in-progress'),
-              'status_review': states.get('review', 'status:review'),
-              'stale_in_progress_hours': str(watchdog.get('stale_in_progress_hours', 24)),
-              'stale_review_hours': str(watchdog.get('stale_review_hours', 72)),
-          }
-          with open('/tmp/julesops_outputs.txt', 'w', encoding='utf-8') as out:
-              for k, v in values.items():
-                  out.write(f'{k}={v}\n')
-          PY
-          while IFS='=' read -r key value; do
-            echo "$key=$value" >> "$GITHUB_OUTPUT"
-          done < /tmp/julesops_outputs.txt
+          python3 .github/resolve-config.py
 
       - name: Stop if JulesOps is disabled
         if: steps.config.outputs.enabled != 'true'

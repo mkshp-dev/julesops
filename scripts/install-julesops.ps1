@@ -21,6 +21,7 @@ $files = @(
   @{ Source = "templates/jules-core.md"; Target = ".github/jules-core.md" },
   @{ Source = "templates/jules-task.yml"; Target = ".github/ISSUE_TEMPLATE/jules-task.yml" },
   @{ Source = "templates/julesops.yml"; Target = ".github/julesops.yml" },
+  @{ Source = "templates/resolve-config.py"; Target = ".github/resolve-config.py" },
   @{ Source = "workflows/jules-dispatch.yml"; Target = ".github/workflows/jules-dispatch.yml" },
   @{ Source = "workflows/jules-state-sync.yml"; Target = ".github/workflows/jules-state-sync.yml" },
   @{ Source = "workflows/jules-watchdog.yml"; Target = ".github/workflows/jules-watchdog.yml" }
@@ -77,7 +78,7 @@ foreach ($file in $files) {
     $marker = ""
     if ($ext -eq ".md") {
       $marker = "<!-- JulesOps kit version: $KitVersion -->`r`n"
-    } elseif ($ext -eq ".yml" -or $ext -eq ".yaml") {
+    } elseif ($ext -eq ".yml" -or $ext -eq ".yaml" -or $ext -eq ".py") {
       $marker = "# JulesOps kit version: $KitVersion`r`n"
     }
     

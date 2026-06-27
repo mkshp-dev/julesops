@@ -239,6 +239,7 @@ $kitFiles = @(
   "templates/jules-core.md",
   "templates/jules-task.yml",
   "templates/julesops.yml",
+  "templates/resolve-config.py",
   "workflows/jules-dispatch.yml",
   "workflows/jules-state-sync.yml",
   "workflows/jules-watchdog.yml",
@@ -264,6 +265,7 @@ if ($TargetRepo) {
     ".github/jules-core.md",
     ".github/jules-repo.md",
     ".github/julesops.yml",
+    ".github/resolve-config.py",
     ".github/ISSUE_TEMPLATE/jules-task.yml",
     ".github/workflows/jules-dispatch.yml",
     ".github/workflows/jules-state-sync.yml",
@@ -280,6 +282,7 @@ if ($TargetRepo) {
   $versionCheckedFiles = @(
     ".github/jules-core.md",
     ".github/julesops.yml",
+    ".github/resolve-config.py",
     ".github/ISSUE_TEMPLATE/jules-task.yml",
     ".github/workflows/jules-dispatch.yml",
     ".github/workflows/jules-state-sync.yml",

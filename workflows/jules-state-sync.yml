@@ -36,48 +36,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          if [ ! -f "$JULESOPS_CONFIG_PATH" ]; then
-            echo "Missing $JULESOPS_CONFIG_PATH" >&2
-            exit 1
-          fi
-
-          python3 - <<'PY'
-          import yaml
-
-          path = ".github/julesops.yml"
-          with open(path, "r", encoding="utf-8") as f:
-              raw = yaml.safe_load(f) or {}
-
-          cfg = raw.get("julesops", {})
-          repo = cfg.get("repository", {})
-          pr_policy = cfg.get("pull_request", {})
-          states = cfg.get("states", {})
-          queue = cfg.get("queue", {})
-          issue_completion = cfg.get("issue_completion", {})
-          blocked_comment = cfg.get("blocked_comment", {})
-
-          values = {
-              "base_branch": repo.get("base_branch", "main"),
-              "target_base_branch_only": str(pr_policy.get("target_base_branch_only", False)).lower(),
-              "require_issue_link": str(pr_policy.get("require_issue_link", False)).lower(),
-              "queue_label": queue.get("queue_label", "jules-queue"),
-              "status_in_progress": states.get("in_progress", "status:in-progress"),
-              "status_review": states.get("review", "status:review"),
-              "status_blocked": states.get("blocked", "status:blocked"),
-              "status_done": states.get("done", "status:done"),
-              "close_on_merge": str(issue_completion.get("close_on_merge", True)).lower(),
-              "blocked_marker": blocked_comment.get("marker", "## Blocked"),
-          }
-
-          with open("/tmp/julesops_outputs.txt", "w", encoding="utf-8") as out:
-              for k, v in values.items():
-                  out.write(f"{k}={v}\n")
-          PY
-
-          while IFS='=' read -r key value; do
-            echo "$key=$value" >> "$GITHUB_OUTPUT"
-          done < /tmp/julesops_outputs.txt
+          python3 .github/resolve-config.py
 
       - name: Extract linked issue number from PR body
         id: linked_issue
@@ -272,39 +231,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          if [ ! -f "$JULESOPS_CONFIG_PATH" ]; then
-            echo "Missing $JULESOPS_CONFIG_PATH" >&2
-            exit 1
-          fi
-
-          python3 - <<'PY'
-          import yaml
-
-          path = ".github/julesops.yml"
-          with open(path, "r", encoding="utf-8") as f:
-              raw = yaml.safe_load(f) or {}
-
-          cfg = raw.get("julesops", {})
-          states = cfg.get("states", {})
-          queue = cfg.get("queue", {})
-          blocked_comment = cfg.get("blocked_comment", {})
-
-          values = {
-              "queue_label": queue.get("queue_label", "jules-queue"),
-              "status_in_progress": states.get("in_progress", "status:in-progress"),
-              "status_blocked": states.get("blocked", "status:blocked"),
-              "blocked_marker": blocked_comment.get("marker", "## Blocked"),
-          }
-
-          with open("/tmp/julesops_outputs.txt", "w", encoding="utf-8") as out:
-              for k, v in values.items():
-                  out.write(f"{k}={v}\n")
-          PY
-
-          while IFS='=' read -r key value; do
-            echo "$key=$value" >> "$GITHUB_OUTPUT"
-          done < /tmp/julesops_outputs.txt
+          python3 .github/resolve-config.py
 
       - name: Check whether this is a Jules issue
         id: issue_meta

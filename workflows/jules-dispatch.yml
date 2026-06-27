@@ -29,47 +29,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          if [ ! -f "$JULESOPS_CONFIG_PATH" ]; then
-            echo "Missing $JULESOPS_CONFIG_PATH" >&2
-            exit 1
-          fi
-
-          python3 - <<'PY'
-          import yaml
-
-          path = ".github/julesops.yml"
-          with open(path, "r", encoding="utf-8") as f:
-              raw = yaml.safe_load(f) or {}
-
-          cfg = raw.get("julesops", {})
-          repo = cfg.get("repository", {})
-          queue = cfg.get("queue", {})
-          states = cfg.get("states", {})
-          instructions = cfg.get("instructions", {})
-
-          values = {
-              "enabled": str(cfg.get("enabled", True)).lower(),
-              "base_branch": repo.get("base_branch", "main"),
-              "queue_label": queue.get("queue_label", "jules-queue"),
-              "status_todo": states.get("todo", "status:todo"),
-              "status_in_progress": states.get("in_progress", "status:in-progress"),
-              "status_review": states.get("review", "status:review"),
-              "status_blocked": states.get("blocked", "status:blocked"),
-              "status_failed": states.get("failed", "status:failed"),
-              "status_done": states.get("done", "status:done"),
-              "core_instructions": instructions.get("core", ".github/jules-core.md"),
-              "repo_instructions": instructions.get("repo", ".github/jules-repo.md"),
-          }
-
-          with open("/tmp/julesops_outputs.txt", "w", encoding="utf-8") as out:
-              for k, v in values.items():
-                  out.write(f"{k}={v}\n")
-          PY
-
-          while IFS='=' read -r key value; do
-            echo "$key=$value" >> "$GITHUB_OUTPUT"
-          done < /tmp/julesops_outputs.txt
+          python3 .github/resolve-config.py
 
       - name: Stop if JulesOps is disabled
         if: steps.config.outputs.enabled != 'true'
