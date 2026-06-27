@@ -1,0 +1,19 @@
+{
+  "action": "added",
+  "installation": {
+    "id": 12345678,
+    "app_id": 100001,
+    "account": {
+      "login": "test-org",
+      "type": "Organization"
+    }
+  },
+  "repositories_added": [
+    {
+      "id": 111222333,
+      "full_name": "test-org/new-service",
+      "private": false
+    }
+  ],
+  "repositories_removed": []
+}

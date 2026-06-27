@@ -6,6 +6,7 @@ const { URL } = require('url');
 
 const db = require('./db');
 const store = require('./store');
+const { handleInstallationEvent, handleInstallationRepositoriesEvent } = require('./installation-handlers');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -109,19 +110,29 @@ async function handleWebhook(req, res) {
     signatureMode: verification.mode,
   });
 
-  // Normalise and upsert job state
-  const partialJob = store.normalizeJobFromWebhook(eventName, payload);
+  // Route installation events to dedicated handlers
+  let handlerResult = null;
   let jobError = null;
+
   try {
-    await store.upsertJob(partialJob);
+    if (eventName === 'installation') {
+      handlerResult = await handleInstallationEvent(payload);
+    } else if (eventName === 'installation_repositories') {
+      handlerResult = await handleInstallationRepositoriesEvent(payload);
+    } else {
+      // Normalise and upsert job state for all other event types
+      const partialJob = store.normalizeJobFromWebhook(eventName, payload);
+      await store.upsertJob(partialJob);
+    }
   } catch (err) {
     jobError = err.message;
+    console.error(`[server] Error processing ${eventName} event ${deliveryId}:`, err);
   }
 
   await store.updateEventStatus(deliveryId, jobError ? 'failed' : 'processed', jobError);
 
   webhookReceivedTotal += 1;
-  sendJson(res, 202, { ok: true, event: eventRecord });
+  sendJson(res, 202, { ok: true, event: eventRecord, handler: handlerResult });
 }
 
 // ─── Prometheus metrics ───────────────────────────────────────────────────────

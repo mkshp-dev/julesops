@@ -1,0 +1,21 @@
+{
+  "action": "created",
+  "installation": {
+    "id": 12345678,
+    "app_id": 100001,
+    "account": {
+      "login": "test-org",
+      "type": "Organization"
+    },
+    "target_type": "Organization",
+    "access_tokens_url": "https://api.github.com/app/installations/12345678/access_tokens",
+    "html_url": "https://github.com/apps/julesops-dev/installations/12345678"
+  },
+  "repositories": [
+    {
+      "id": 987654321,
+      "full_name": "test-org/my-repo",
+      "private": false
+    }
+  ]
+}
