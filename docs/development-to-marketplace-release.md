@@ -152,7 +152,7 @@ Goal: build the first paid feature set around multi-repo operations.
   - failed dispatches
   - stale review items
   - recently completed work
-- Store normalized job and attempt history.
+- Store normalized job and attempt history. [DONE]
 - Add repository filters, organization filters, and status filters.
 - Add notification hooks for stale or failed work, starting with email or webhook destinations.
 - Add organization membership and authorization model.

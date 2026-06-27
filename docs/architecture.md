@@ -371,3 +371,20 @@ CREATE TABLE events (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 ```
+
+### 10.5.3 Job and Attempt Normalization & History Storage Rules
+
+To maintain long-term performance, audit capabilities, and storage reliability of the control plane, the following normalization and history retention rules must be enforced:
+
+#### A. Relationship Constraints & Invariants
+- **One-to-Many Job-Attempt Mapping**: Each record in `jobs` (which represents the overall lifecycle of a task issue) maps to multiple records in `attempts` (representing individual Actions workflow dispatches).
+- **Sequential Attempts**: The `attempt_number` in the `attempts` table starts at `1` and increments strictly sequentially for each subsequent dispatch triggered by a requeue or retry event.
+- **Immutable Events Audit Trail**: Every ingested GitHub webhook is logged as an immutable entry in the `events` table. This provides a replayable log of state changes for audit purposes or database state reconstruction.
+
+#### B. Data Retention and Archiving Policy
+- **Hot Storage (Operational database)**:
+  - Active jobs (`todo`, `in-progress`, `review`, `blocked`) and recently finished jobs (`done`, `failed` updated within the last 90 days) reside in the main operational tables to keep queries fast.
+- **Cold Storage (Partitioning/Archiving)**:
+  - Jobs updated more than 90 days ago, along with their associated `attempts` and `events` logs, are automatically partitioned out of the hot tables.
+  - They are serialized into compressed parquet/JSON archives and moved to object storage (e.g. S3 or GCS) for historical reporting and compliance.
+- **Payload Sanitization**: Prior to cold storage export, webhook payloads in the `events` table are automatically sanitized to remove temporary API tokens, secrets, or personal identifiable information (PII).
