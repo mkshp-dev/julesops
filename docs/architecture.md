@@ -300,3 +300,74 @@ To support real-time state synchronization, self-healing, and dashboard monitori
 - **Handler Action**:
   - If dispatch workflow fails: Transition the task issue to `failed` and log the execution error detail for maintainer debugging.
   - If sync/watchdog runs fail: Log telemetry errors and notify operators.
+
+## 10.5 Hosted Job Model & Database Schema
+
+To support multi-repository visibility and attempt auditing in Phase 4 without displacing GitHub as the source of truth, the JulesOps hosted backend implements a read-only telemetry mirror database. 
+
+### 10.5.1 Hosted Job Model Principle
+- **GitHub as Source of Truth**: State labels on GitHub issues and PR status continue to drive the core state machine.
+- **Hosted Job Mirror**: The database mirrors jobs and attempts based on webhook events. If the database falls out of sync (e.g. due to missed webhooks), the watchdog will correct both GitHub labels and the database state during its scheduled runs.
+
+### 10.5.2 Database Schema (SQL/DDL)
+
+```sql
+-- Track App installations
+CREATE TABLE installations (
+    id BIGINT PRIMARY KEY, -- Matches GitHub Installation ID
+    account_id BIGINT NOT NULL, -- Matches GitHub account owner ID
+    account_login VARCHAR(255) NOT NULL, -- e.g., 'mkshp-dev'
+    account_type VARCHAR(50) NOT NULL, -- 'User' or 'Organization'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Track authorized repositories
+CREATE TABLE repositories (
+    id BIGINT PRIMARY KEY, -- Matches GitHub Repository ID
+    installation_id BIGINT REFERENCES installations(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL, -- e.g., 'julesops'
+    full_name VARCHAR(255) NOT NULL, -- e.g., 'mkshp-dev/julesops'
+    base_branch VARCHAR(100) DEFAULT 'main',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Track high-level task jobs (tied to GitHub Issues)
+CREATE TABLE jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    repository_id BIGINT REFERENCES repositories(id) ON DELETE CASCADE,
+    issue_number INT NOT NULL,
+    issue_title VARCHAR(255) NOT NULL,
+    current_status VARCHAR(50) NOT NULL, -- todo, in-progress, review, blocked, failed, done
+    pr_number INT,
+    branch_name VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (repository_id, issue_number)
+);
+
+-- Track individual execution attempts for each job (tied to GitHub Action runs)
+CREATE TABLE attempts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id UUID REFERENCES jobs(id) ON DELETE CASCADE,
+    attempt_number INT NOT NULL,
+    workflow_run_id BIGINT, -- Matches GitHub Actions Workflow Run ID
+    workflow_run_url VARCHAR(512),
+    status VARCHAR(50) NOT NULL, -- running, completed, failed
+    conclusion VARCHAR(50), -- success, failure, cancelled, timed_out
+    dispatched_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Audit log of ingested webhook events
+CREATE TABLE events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    repository_id BIGINT REFERENCES repositories(id) ON DELETE CASCADE,
+    job_id UUID REFERENCES jobs(id) ON DELETE SET NULL,
+    event_type VARCHAR(100) NOT NULL, -- e.g., 'issue_labeled', 'pr_opened'
+    payload JSONB NOT NULL, -- raw webhook JSON
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
