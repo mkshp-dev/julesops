@@ -146,7 +146,7 @@ Goal: build the first paid feature set around multi-repo operations.
 
 ### Development tasks
 
-- Build dashboard views for:
+- Build dashboard views for: [DONE]
   - active jobs
   - blocked jobs
   - failed dispatches

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JulesOps - Operations Control</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Load Feather Icons for modern vector icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="logo-container">
+      <div class="logo-icon">J</div>
+      <h1 class="logo-text">JulesOps</h1>
+    </div>
+    
+    <nav>
+      <ul class="nav-links">
+        <li><a class="nav-item active" onclick="switchTab('all')"><i data-feather="grid"></i>Overview</a></li>
+        <li><a class="nav-item" onclick="switchTab('in-progress')"><i data-feather="play"></i>Active Jobs</a></li>
+        <li><a class="nav-item" onclick="switchTab('blocked')"><i data-feather="slash"></i>Blocked Jobs</a></li>
+        <li><a class="nav-item" onclick="switchTab('failed')"><i data-feather="alert-octagon"></i>Failed Dispatches</a></li>
+        <li><a class="nav-item" onclick="switchTab('review')"><i data-feather="eye"></i>Stale Reviews</a></li>
+        <li><a class="nav-item" onclick="switchTab('done')"><i data-feather="check-circle"></i>Completed Work</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content Panel -->
+  <main class="main-content">
+    
+    <!-- Top Header Bar -->
+    <header class="top-bar">
+      <h2 class="page-title" id="page-title-heading">Operations Dashboard</h2>
+      
+      <div class="search-box">
+        <i data-feather="search" style="color: var(--text-secondary); width: 18px; height: 18px;"></i>
+        <input type="text" id="search-bar" class="search-input" placeholder="Search jobs, repos, PRs..." oninput="handleSearch()">
+      </div>
+    </header>
+
+    <!-- Dashboard Main Area -->
+    <div class="content-wrapper">
+      
+      <!-- Stats summary cards -->
+      <section class="stats-grid">
+        <div class="stat-card active" onclick="switchTab('in-progress')">
+          <div class="stat-label">Active Jobs</div>
+          <div class="stat-value-container">
+            <span class="stat-value" id="count-in-progress">1</span>
+            <span class="stat-indicator"></span>
+          </div>
+        </div>
+        <div class="stat-card blocked" onclick="switchTab('blocked')">
+          <div class="stat-label">Blocked Jobs</div>
+          <div class="stat-value-container">
+            <span class="stat-value" id="count-blocked">1</span>
+            <span class="stat-indicator"></span>
+          </div>
+        </div>
+        <div class="stat-card failed" onclick="switchTab('failed')">
+          <div class="stat-label">Failed Dispatches</div>
+          <div class="stat-value-container">
+            <span class="stat-value" id="count-failed">1</span>
+            <span class="stat-indicator"></span>
+          </div>
+        </div>
+        <div class="stat-card stale" onclick="switchTab('review')">
+          <div class="stat-label">Stale Reviews</div>
+          <div class="stat-value-container">
+            <span class="stat-value" id="count-review">2</span>
+            <span class="stat-indicator"></span>
+          </div>
+        </div>
+        <div class="stat-card completed" onclick="switchTab('done')">
+          <div class="stat-label">Completed Work</div>
+          <div class="stat-value-container">
+            <span class="stat-value" id="count-done">2</span>
+            <span class="stat-indicator"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Detailed jobs table -->
+      <section class="section-container">
+        <div class="section-header">
+          <span id="table-title">All Tracked Jobs</span>
+          <span class="count-badge" id="table-count">7</span>
+        </div>
+        
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Repository</th>
+                <th>Task / Issue</th>
+                <th>Status</th>
+                <th>Attempt</th>
+                <th>Branch / PR</th>
+                <th>Last Updated</th>
+              </tr>
+            </thead>
+            <tbody id="jobs-tbody">
+              <!-- JS will populate rows dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    // In-memory mock jobs data representing active, blocked, failed, stale, and completed jobs
+    const mockJobs = [
+      {
+        repo: "mkshp-dev/julesops",
+        issueNum: 34,
+        issueTitle: "Implement multi-tenant App isolation",
+        status: "in-progress",
+        attempt: 1,
+        branch: "jules/task-34",
+        pr: 40,
+        prUrl: "https://github.com/mkshp-dev/julesops/pull/40",
+        lastUpdated: "10 mins ago"
+      },
+      {
+        repo: "aggregator-org/service-auth",
+        issueNum: 110,
+        issueTitle: "Decouple session cookie validator",
+        status: "blocked",
+        attempt: 2,
+        branch: "jules/fix-auth",
+        pr: 112,
+        prUrl: "https://github.com/aggregator-org/service-auth/pull/112",
+        lastUpdated: "2 hours ago"
+      },
+      {
+        repo: "my-org/api-gateway",
+        issueNum: 201,
+        issueTitle: "Refactor route mapping modules",
+        status: "failed",
+        attempt: 3,
+        branch: "jules/endpoint-refactor",
+        pr: null,
+        prUrl: null,
+        lastUpdated: "1 day ago"
+      },
+      {
+        repo: "aggregator-org/web-frontend",
+        issueNum: 85,
+        issueTitle: "Add stale checking notifications",
+        status: "review",
+        attempt: 1,
+        branch: "jules/stale-reviews",
+        pr: 86,
+        prUrl: "https://github.com/aggregator-org/web-frontend/pull/86",
+        lastUpdated: "4 days ago (Stale)"
+      },
+      {
+        repo: "my-org/payment-service",
+        issueNum: 45,
+        issueTitle: "Integrate Stripe billing webhooks",
+        status: "review",
+        attempt: 1,
+        branch: "jules/integrate-stripe",
+        pr: 47,
+        prUrl: "https://github.com/my-org/payment-service/pull/47",
+        lastUpdated: "6 hours ago"
+      },
+      {
+        repo: "mkshp-dev/julesops",
+        issueNum: 13,
+        issueTitle: "Add status comments for important transitions",
+        status: "done",
+        attempt: 1,
+        branch: "jules/status-comments",
+        pr: 16,
+        prUrl: "https://github.com/mkshp-dev/julesops/pull/16",
+        lastUpdated: "2 hours ago"
+      },
+      {
+        repo: "mkshp-dev/julesops",
+        issueNum: 14,
+        issueTitle: "Add watchdog handling for mismatched states",
+        status: "done",
+        attempt: 1,
+        branch: "jules/watchdog-mismatch",
+        pr: 17,
+        prUrl: "https://github.com/mkshp-dev/julesops/pull/17",
+        lastUpdated: "1 hour ago"
+      }
+    ];
+
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    // Initialize counts on page load
+    function updateCounts() {
+      document.getElementById('count-in-progress').innerText = mockJobs.filter(j => j.status === 'in-progress').length;
+      document.getElementById('count-blocked').innerText = mockJobs.filter(j => j.status === 'blocked').length;
+      document.getElementById('count-failed').innerText = mockJobs.filter(j => j.status === 'failed').length;
+      document.getElementById('count-review').innerText = mockJobs.filter(j => j.status === 'review').length;
+      document.getElementById('count-done').innerText = mockJobs.filter(j => j.status === 'done').length;
+    }
+
+    // Return the status text for visual badges
+    function getStatusLabel(status) {
+      switch (status) {
+        case 'in-progress': return 'Active';
+        case 'blocked': return 'Blocked';
+        case 'failed': return 'Failed';
+        case 'review': return 'In Review';
+        case 'done': return 'Completed';
+        default: return status;
+      }
+    }
+
+    // Populate data table rows based on filters and search queries
+    function renderTable() {
+      const tbody = document.getElementById('jobs-tbody');
+      tbody.innerHTML = '';
+
+      let filtered = mockJobs;
+      if (currentFilter !== 'all') {
+        filtered = filtered.filter(j => j.status === currentFilter);
+      }
+
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(j => 
+          j.repo.toLowerCase().includes(query) ||
+          j.issueTitle.toLowerCase().includes(query) ||
+          (j.pr && j.pr.toString().includes(query))
+        );
+      }
+
+      document.getElementById('table-count').innerText = filtered.length;
+      
+      const filterTitles = {
+        all: "All Tracked Jobs",
+        'in-progress': "Active Jobs",
+        blocked: "Blocked Jobs",
+        failed: "Failed Dispatches",
+        review: "In-Review (Stale) Jobs",
+        done: "Recently Completed Work"
+      };
+      document.getElementById('table-title').innerText = filterTitles[currentFilter];
+
+      filtered.forEach(job => {
+        const row = document.createElement('tr');
+        
+        // Repolink cell
+        const repoTd = document.createElement('td');
+        repoTd.innerHTML = `<a href="https://github.com/${job.repo}" target="_blank" class="repo-link">${job.repo}</a>`;
+        row.appendChild(repoTd);
+
+        // Issue title cell
+        const issueTd = document.createElement('td');
+        issueTd.innerHTML = `<a href="https://github.com/${job.repo}/issues/${job.issueNum}" target="_blank" class="issue-link">#${job.issueNum}: ${job.issueTitle}</a>`;
+        row.appendChild(issueTd);
+
+        // Status badge cell
+        const statusTd = document.createElement('td');
+        statusTd.innerHTML = `<span class="badge badge-${job.status}">${getStatusLabel(job.status)}</span>`;
+        row.appendChild(statusTd);
+
+        // Attempt cell
+        const attemptTd = document.createElement('td');
+        attemptTd.innerText = `Attempt #${job.attempt}`;
+        row.appendChild(attemptTd);
+
+        // Branch / PR cell
+        const prTd = document.createElement('td');
+        if (job.pr) {
+          prTd.innerHTML = `<a href="${job.prUrl}" target="_blank" class="external-link"><i data-feather="git-pull-request" style="width: 14px; height: 14px;"></i> PR #${job.pr}</a>`;
+        } else {
+          prTd.innerHTML = `<span style="color: var(--text-secondary); font-family: monospace;">${job.branch}</span>`;
+        }
+        row.appendChild(prTd);
+
+        // Last updated cell
+        const updatedTd = document.createElement('td');
+        updatedTd.innerText = job.lastUpdated;
+        row.appendChild(updatedTd);
+
+        tbody.appendChild(row);
+      });
+
+      // Rerender Feather icons inside dynamically created elements
+      feather.replace();
+    }
+
+    // Switch active navigation tab
+    function switchTab(tabName) {
+      currentFilter = tabName;
+      
+      // Update active nav class
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        item.classList.remove('active');
+        const iconName = item.querySelector('svg').getAttribute('data-feather');
+        // Simple map of tabName to corresponding navbar items
+        const tabMap = {
+          all: 'grid',
+          'in-progress': 'play',
+          blocked: 'slash',
+          failed: 'alert-octagon',
+          review: 'eye',
+          done: 'check-circle'
+        };
+        if (tabMap[tabName] === iconName) {
+          item.classList.add('active');
+        }
+      });
+
+      // Update page title
+      const titleHeading = {
+        all: "Operations Dashboard",
+        'in-progress': "Active Tasks",
+        blocked: "Blocked Tasks",
+        failed: "Failed runs",
+        review: "Review Backlog",
+        done: "Completed Workloads"
+      };
+      document.getElementById('page-title-heading').innerText = titleHeading[tabName];
+
+      renderTable();
+    }
+
+    // Handle search query updates
+    function handleSearch() {
+      searchQuery = document.getElementById('search-bar').value;
+      renderTable();
+    }
+
+    // Page Load Setup
+    window.onload = () => {
+      updateCounts();
+      renderTable();
+      feather.replace();
+    }
+  </script>
+</body>
+</html>
