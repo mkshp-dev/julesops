@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JulesOps - Operations Control</title>
+  <title>JulesOps - Operations Dashboard</title>
+  <meta name="description" content="JulesOps hosted control-plane dashboard — real-time view of multi-repo Jules task execution.">
   <link rel="stylesheet" href="style.css">
-  <!-- Load Feather Icons for modern vector icons -->
   <script src="https://unpkg.com/feather-icons"></script>
 </head>
 <body>
@@ -16,36 +16,43 @@
       <div class="logo-icon">J</div>
       <h1 class="logo-text">JulesOps</h1>
     </div>
-    
+
     <nav>
       <ul class="nav-links">
-        <li><a class="nav-item active" onclick="switchTab('all')"><i data-feather="grid"></i>Overview</a></li>
-        <li><a class="nav-item" onclick="switchTab('in-progress')"><i data-feather="play"></i>Active Jobs</a></li>
-        <li><a class="nav-item" onclick="switchTab('blocked')"><i data-feather="slash"></i>Blocked Jobs</a></li>
-        <li><a class="nav-item" onclick="switchTab('failed')"><i data-feather="alert-octagon"></i>Failed Dispatches</a></li>
-        <li><a class="nav-item" onclick="switchTab('review')"><i data-feather="eye"></i>Stale Reviews</a></li>
-        <li><a class="nav-item" onclick="switchTab('done')"><i data-feather="check-circle"></i>Completed Work</a></li>
+        <li><a class="nav-item active" id="nav-all" onclick="switchTab('all')"><i data-feather="grid"></i>Overview</a></li>
+        <li><a class="nav-item" id="nav-in-progress" onclick="switchTab('in-progress')"><i data-feather="play"></i>Active Jobs</a></li>
+        <li><a class="nav-item" id="nav-blocked" onclick="switchTab('blocked')"><i data-feather="slash"></i>Blocked Jobs</a></li>
+        <li><a class="nav-item" id="nav-failed" onclick="switchTab('failed')"><i data-feather="alert-octagon"></i>Failed Dispatches</a></li>
+        <li><a class="nav-item" id="nav-review" onclick="switchTab('review')"><i data-feather="eye"></i>Stale Reviews</a></li>
+        <li><a class="nav-item" id="nav-done" onclick="switchTab('done')"><i data-feather="check-circle"></i>Completed Work</a></li>
       </ul>
     </nav>
+
+    <div class="sidebar-footer">
+      <div class="backend-status" id="backend-status-indicator">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-label">Connecting…</span>
+      </div>
+      <button class="refresh-btn" id="refresh-btn" onclick="loadData()" title="Refresh data">
+        <i data-feather="refresh-cw"></i>
+      </button>
+    </div>
   </aside>
 
   <!-- Main Content Panel -->
   <main class="main-content">
-    
+
     <!-- Top Header Bar -->
     <header class="top-bar">
       <h2 class="page-title" id="page-title-heading">Operations Dashboard</h2>
-      
+
       <div style="display: flex; gap: 15px; align-items: center;">
         <!-- Organization Filter Dropdown -->
         <select id="org-filter" class="filter-select" onchange="handleOrgFilter()">
           <option value="all">All Organizations</option>
-          <option value="mkshp-dev">mkshp-dev</option>
-          <option value="aggregator-org">aggregator-org</option>
-          <option value="my-org">my-org</option>
         </select>
-        
-        <!-- Repository Filter Dropdown (populated dynamically) -->
+
+        <!-- Repository Filter Dropdown -->
         <select id="repo-filter" class="filter-select" onchange="handleRepoFilter()">
           <option value="all">All Repositories</option>
         </select>
@@ -53,337 +60,510 @@
         <!-- Global Text Search Box -->
         <div class="search-box">
           <i data-feather="search" style="color: var(--text-secondary); width: 18px; height: 18px;"></i>
-          <input type="text" id="search-bar" class="search-input" placeholder="Search jobs, repos, PRs..." oninput="handleSearch()">
+          <input type="text" id="search-bar" class="search-input" placeholder="Search jobs, repos, PRs…" oninput="handleSearch()">
         </div>
       </div>
     </header>
 
     <!-- Dashboard Main Area -->
-    <div class="content-wrapper">`r`n      <section class="prototype-banner">Prototype dashboard using mock data. Not connected to a hosted JulesOps backend yet.</section>
-      
-      <!-- Stats summary cards -->
-      <section class="stats-grid">
-        <div class="stat-card active" onclick="switchTab('in-progress')">
-          <div class="stat-label">Active Jobs</div>
-          <div class="stat-value-container">
-            <span class="stat-value" id="count-in-progress">1</span>
-            <span class="stat-indicator"></span>
-          </div>
-        </div>
-        <div class="stat-card blocked" onclick="switchTab('blocked')">
-          <div class="stat-label">Blocked Jobs</div>
-          <div class="stat-value-container">
-            <span class="stat-value" id="count-blocked">1</span>
-            <span class="stat-indicator"></span>
-          </div>
-        </div>
-        <div class="stat-card failed" onclick="switchTab('failed')">
-          <div class="stat-label">Failed Dispatches</div>
-          <div class="stat-value-container">
-            <span class="stat-value" id="count-failed">1</span>
-            <span class="stat-indicator"></span>
-          </div>
-        </div>
-        <div class="stat-card stale" onclick="switchTab('review')">
-          <div class="stat-label">Stale Reviews</div>
-          <div class="stat-value-container">
-            <span class="stat-value" id="count-review">2</span>
-            <span class="stat-indicator"></span>
-          </div>
-        </div>
-        <div class="stat-card completed" onclick="switchTab('done')">
-          <div class="stat-label">Completed Work</div>
-          <div class="stat-value-container">
-            <span class="stat-value" id="count-done">2</span>
-            <span class="stat-indicator"></span>
-          </div>
-        </div>
+    <div class="content-wrapper">
+
+      <!-- Beta banner (replaces prototype/mock-data banner) -->
+      <section class="beta-banner" id="beta-banner">
+        <i data-feather="info" style="width:16px;height:16px;"></i>
+        <span>Beta — data fetched live from the JulesOps backend. Some features are still in progress.</span>
       </section>
 
-      <!-- Detailed jobs table -->
-      <section class="section-container">
-        <div class="section-header">
-          <span id="table-title">All Tracked Jobs</span>
-          <span class="count-badge" id="table-count">7</span>
-        </div>
-        
-        <div class="data-table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Repository</th>
-                <th>Task / Issue</th>
-                <th>Status</th>
-                <th>Attempt</th>
-                <th>Branch / PR</th>
-                <th>Last Updated</th>
-              </tr>
-            </thead>
-            <tbody id="jobs-tbody">
-              <!-- JS will populate rows dynamically -->
-            </tbody>
-          </table>
-        </div>
+      <!-- Backend unavailable error state -->
+      <section class="error-state hidden" id="error-state">
+        <i data-feather="wifi-off" style="width:40px;height:40px;color:var(--color-rose);"></i>
+        <h3>Backend unavailable</h3>
+        <p>Could not reach the JulesOps server. Make sure it is running and accessible.</p>
+        <button class="retry-btn" onclick="loadData()">
+          <i data-feather="refresh-cw"></i> Retry
+        </button>
       </section>
 
-    </div>
+      <!-- Loading skeleton state -->
+      <section class="loading-state hidden" id="loading-state">
+        <div class="spinner"></div>
+        <span>Loading dashboard data…</span>
+      </section>
+
+      <!-- Main content (shown after successful load) -->
+      <div id="main-data" class="hidden">
+
+        <!-- Stats summary cards -->
+        <section class="stats-grid">
+          <div class="stat-card active" onclick="switchTab('in-progress')">
+            <div class="stat-label">Active Jobs</div>
+            <div class="stat-value-container">
+              <span class="stat-value" id="count-in-progress">0</span>
+              <span class="stat-indicator"></span>
+            </div>
+          </div>
+          <div class="stat-card blocked" onclick="switchTab('blocked')">
+            <div class="stat-label">Blocked Jobs</div>
+            <div class="stat-value-container">
+              <span class="stat-value" id="count-blocked">0</span>
+              <span class="stat-indicator"></span>
+            </div>
+          </div>
+          <div class="stat-card failed" onclick="switchTab('failed')">
+            <div class="stat-label">Failed Dispatches</div>
+            <div class="stat-value-container">
+              <span class="stat-value" id="count-failed">0</span>
+              <span class="stat-indicator"></span>
+            </div>
+          </div>
+          <div class="stat-card stale" onclick="switchTab('review')">
+            <div class="stat-label">Stale Reviews</div>
+            <div class="stat-value-container">
+              <span class="stat-value" id="count-review">0</span>
+              <span class="stat-indicator"></span>
+            </div>
+          </div>
+          <div class="stat-card completed" onclick="switchTab('done')">
+            <div class="stat-label">Completed Work</div>
+            <div class="stat-value-container">
+              <span class="stat-value" id="count-done">0</span>
+              <span class="stat-indicator"></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Jobs table -->
+        <section class="section-container">
+          <div class="section-header">
+            <span id="table-title">All Tracked Jobs</span>
+            <span class="count-badge" id="table-count">0</span>
+          </div>
+
+          <!-- Empty state for no installations -->
+          <div class="empty-state hidden" id="empty-no-installs">
+            <i data-feather="package" style="width:40px;height:40px;opacity:0.4;"></i>
+            <h3>No installations</h3>
+            <p>Install the JulesOps GitHub App on a repository or organization to get started.</p>
+          </div>
+
+          <!-- Empty state for no jobs in this filter -->
+          <div class="empty-state hidden" id="empty-no-jobs">
+            <i data-feather="inbox" style="width:40px;height:40px;opacity:0.4;"></i>
+            <h3>No jobs found</h3>
+            <p>No jobs match the current filter. Try changing the status, organization, or search query.</p>
+          </div>
+
+          <div class="data-table-wrapper" id="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Repository</th>
+                  <th>Task / Issue</th>
+                  <th>Status</th>
+                  <th>Attempt</th>
+                  <th>Branch / PR</th>
+                  <th>Last Updated</th>
+                </tr>
+              </thead>
+              <tbody id="jobs-tbody">
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div><!-- end #main-data -->
+
+    </div><!-- end .content-wrapper -->
   </main>
 
-  <script>
-    // In-memory mock jobs data representing active, blocked, failed, stale, and completed jobs
-    const mockJobs = [
-      {
-        repo: "mkshp-dev/julesops",
-        issueNum: 34,
-        issueTitle: "Implement multi-tenant App isolation",
-        status: "in-progress",
-        attempt: 1,
-        branch: "jules/task-34",
-        pr: 40,
-        prUrl: "https://github.com/mkshp-dev/julesops/pull/40",
-        lastUpdated: "10 mins ago"
-      },
-      {
-        repo: "aggregator-org/service-auth",
-        issueNum: 110,
-        issueTitle: "Decouple session cookie validator",
-        status: "blocked",
-        attempt: 2,
-        branch: "jules/fix-auth",
-        pr: 112,
-        prUrl: "https://github.com/aggregator-org/service-auth/pull/112",
-        lastUpdated: "2 hours ago"
-      },
-      {
-        repo: "my-org/api-gateway",
-        issueNum: 201,
-        issueTitle: "Refactor route mapping modules",
-        status: "failed",
-        attempt: 3,
-        branch: "jules/endpoint-refactor",
-        pr: null,
-        prUrl: null,
-        lastUpdated: "1 day ago"
-      },
-      {
-        repo: "aggregator-org/web-frontend",
-        issueNum: 85,
-        issueTitle: "Add stale checking notifications",
-        status: "review",
-        attempt: 1,
-        branch: "jules/stale-reviews",
-        pr: 86,
-        prUrl: "https://github.com/aggregator-org/web-frontend/pull/86",
-        lastUpdated: "4 days ago (Stale)"
-      },
-      {
-        repo: "my-org/payment-service",
-        issueNum: 45,
-        issueTitle: "Integrate Stripe billing webhooks",
-        status: "review",
-        attempt: 1,
-        branch: "jules/integrate-stripe",
-        pr: 47,
-        prUrl: "https://github.com/my-org/payment-service/pull/47",
-        lastUpdated: "6 hours ago"
-      },
-      {
-        repo: "mkshp-dev/julesops",
-        issueNum: 13,
-        issueTitle: "Add status comments for important transitions",
-        status: "done",
-        attempt: 1,
-        branch: "jules/status-comments",
-        pr: 16,
-        prUrl: "https://github.com/mkshp-dev/julesops/pull/16",
-        lastUpdated: "2 hours ago"
-      },
-      {
-        repo: "mkshp-dev/julesops",
-        issueNum: 14,
-        issueTitle: "Add watchdog handling for mismatched states",
-        status: "done",
-        attempt: 1,
-        branch: "jules/watchdog-mismatch",
-        pr: 17,
-        prUrl: "https://github.com/mkshp-dev/julesops/pull/17",
-        lastUpdated: "1 hour ago"
-      }
-    ];
+  <!-- Job Detail Drawer -->
+  <aside class="job-drawer hidden" id="job-drawer">
+    <div class="drawer-header">
+      <h3 class="drawer-title" id="drawer-title">Job Detail</h3>
+      <button class="drawer-close" id="drawer-close-btn" onclick="closeDrawer()">
+        <i data-feather="x"></i>
+      </button>
+    </div>
+    <div class="drawer-body" id="drawer-body">
+      <div class="drawer-loading">
+        <div class="spinner spinner-sm"></div>
+        <span>Loading…</span>
+      </div>
+    </div>
+  </aside>
 
+  <script>
+    // ─── Config ───────────────────────────────────────────────────────────────
+
+    // Set JULESOPS_API to the backend base URL (change if deploying separately).
+    // In local dev, the server and dashboard are served from the same origin.
+    const API_BASE = window.JULESOPS_API || '';
+
+    // ─── State ────────────────────────────────────────────────────────────────
+
+    let allJobs = [];
+    let organizations = [];
+    let repositories = [];
     let currentFilter = 'all';
     let searchQuery = '';
     let selectedOrg = 'all';
     let selectedRepo = 'all';
+    let isLoading = false;
 
-    // Initialize counts on page load
-    function updateCounts() {
-      document.getElementById('count-in-progress').innerText = mockJobs.filter(j => j.status === 'in-progress').length;
-      document.getElementById('count-blocked').innerText = mockJobs.filter(j => j.status === 'blocked').length;
-      document.getElementById('count-failed').innerText = mockJobs.filter(j => j.status === 'failed').length;
-      document.getElementById('count-review').innerText = mockJobs.filter(j => j.status === 'review').length;
-      document.getElementById('count-done').innerText = mockJobs.filter(j => j.status === 'done').length;
+    // ─── API helpers ─────────────────────────────────────────────────────────
+
+    async function apiFetch(path) {
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: { accept: 'application/json' },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status} from ${path}`);
+      return res.json();
     }
 
-    // Populate repository filter based on organization selection
+    // ─── Load all data ────────────────────────────────────────────────────────
+
+    async function loadData() {
+      if (isLoading) return;
+      isLoading = true;
+
+      showState('loading');
+
+      try {
+        const [jobsData, orgsData, reposData] = await Promise.all([
+          apiFetch('/api/jobs'),
+          apiFetch('/api/organizations'),
+          apiFetch('/api/repositories'),
+        ]);
+
+        allJobs = normalizeJobs(jobsData.jobs || []);
+        organizations = orgsData.organizations || [];
+        repositories = reposData.repositories || [];
+
+        setBackendStatus(true);
+        showState('data');
+        populateOrgFilter();
+        updateCounts();
+        renderTable();
+
+      } catch (err) {
+        console.error('[dashboard] Failed to load data:', err);
+        setBackendStatus(false);
+        showState('error');
+      } finally {
+        isLoading = false;
+        const btn = document.getElementById('refresh-btn');
+        if (btn) btn.querySelector('svg') && feather.replace();
+      }
+    }
+
+    // Normalise jobs from Postgres shape (snake_case) or JSON-file shape (camelCase)
+    function normalizeJobs(jobs) {
+      return jobs.map(j => ({
+        id: j.id,
+        repo: j.repository || j.repo,
+        issueNum: j.issue_number ?? j.issueNum,
+        issueTitle: j.issue_title ?? j.issueTitle ?? '',
+        status: j.current_status ?? j.status ?? 'todo',
+        attempt: j.attempt_number ?? j.attempt ?? 1,
+        prNumber: j.pr_number ?? j.pr ?? null,
+        branchName: j.branch_name ?? j.branch ?? null,
+        updatedAt: j.updated_at ?? j.lastUpdated ?? null,
+      }));
+    }
+
+    // ─── UI state machine ─────────────────────────────────────────────────────
+
+    function showState(state) {
+      const loading = document.getElementById('loading-state');
+      const error = document.getElementById('error-state');
+      const data = document.getElementById('main-data');
+
+      loading.classList.toggle('hidden', state !== 'loading');
+      error.classList.toggle('hidden', state !== 'error');
+      data.classList.toggle('hidden', state !== 'data');
+    }
+
+    function setBackendStatus(online) {
+      const dot = document.getElementById('status-dot');
+      const label = document.getElementById('status-label');
+      if (online) {
+        dot.style.background = 'var(--color-emerald)';
+        dot.style.boxShadow = '0 0 8px var(--color-emerald)';
+        label.textContent = 'Backend online';
+      } else {
+        dot.style.background = 'var(--color-rose)';
+        dot.style.boxShadow = '0 0 8px var(--color-rose)';
+        label.textContent = 'Backend offline';
+      }
+    }
+
+    // ─── Filters ──────────────────────────────────────────────────────────────
+
+    function populateOrgFilter() {
+      const orgSelect = document.getElementById('org-filter');
+      const current = orgSelect.value;
+      orgSelect.innerHTML = '<option value="all">All Organizations</option>';
+
+      const logins = organizations.map(o => o.login || o.account_login).filter(Boolean);
+      // Also derive from repos if no installations recorded
+      const repoOrgs = [...new Set(repositories.map(r => (r.full_name || '').split('/')[0]).filter(Boolean))];
+      const all = [...new Set([...logins, ...repoOrgs])].sort();
+
+      all.forEach(login => {
+        const opt = document.createElement('option');
+        opt.value = login;
+        opt.textContent = login;
+        orgSelect.appendChild(opt);
+      });
+
+      if (current && current !== 'all') orgSelect.value = current;
+    }
+
     function populateRepoFilter() {
       const repoSelect = document.getElementById('repo-filter');
       repoSelect.innerHTML = '<option value="all">All Repositories</option>';
-      
-      let filteredRepos = [];
-      if (selectedOrg === 'all') {
-        filteredRepos = [...new Set(mockJobs.map(j => j.repo))];
-      } else {
-        filteredRepos = [...new Set(mockJobs.filter(j => j.repo.startsWith(selectedOrg + '/')).map(j => j.repo))];
+
+      let filtered = repositories;
+      if (selectedOrg !== 'all') {
+        filtered = filtered.filter(r => (r.full_name || '').startsWith(selectedOrg + '/'));
       }
 
-      filteredRepos.forEach(repo => {
+      // Fallback: derive from jobs if no repo records
+      if (filtered.length === 0) {
+        filtered = [...new Set(allJobs.map(j => j.repo).filter(Boolean))]
+          .filter(r => selectedOrg === 'all' || r.startsWith(selectedOrg + '/'))
+          .map(fn => ({ full_name: fn }));
+      }
+
+      filtered.forEach(r => {
+        const fn = r.full_name || r;
         const opt = document.createElement('option');
-        opt.value = repo;
-        opt.innerText = repo.split('/')[1] || repo; // Display only name part
+        opt.value = fn;
+        opt.textContent = fn.split('/')[1] || fn;
         repoSelect.appendChild(opt);
       });
+
       selectedRepo = 'all';
     }
 
-    // Return the status text for visual badges
-    function getStatusLabel(status) {
-      switch (status) {
-        case 'in-progress': return 'Active';
-        case 'blocked': return 'Blocked';
-        case 'failed': return 'Failed';
-        case 'review': return 'In Review';
-        case 'done': return 'Completed';
-        default: return status;
-      }
+    // ─── Counts ───────────────────────────────────────────────────────────────
+
+    function updateCounts() {
+      const counts = { 'in-progress': 0, blocked: 0, failed: 0, review: 0, done: 0, todo: 0 };
+      allJobs.forEach(j => { counts[j.status] = (counts[j.status] || 0) + 1; });
+      document.getElementById('count-in-progress').textContent = counts['in-progress'];
+      document.getElementById('count-blocked').textContent = counts['blocked'];
+      document.getElementById('count-failed').textContent = counts['failed'];
+      document.getElementById('count-review').textContent = counts['review'];
+      document.getElementById('count-done').textContent = counts['done'];
     }
 
-    // Populate data table rows based on filters and search queries
-    function renderTable() {
-      const tbody = document.getElementById('jobs-tbody');
-      tbody.innerHTML = '';
+    // ─── Table render ─────────────────────────────────────────────────────────
 
-      let filtered = mockJobs;
-
-      // Apply organization filter
-      if (selectedOrg !== 'all') {
-        filtered = filtered.filter(j => j.repo.startsWith(selectedOrg + '/'));
-      }
-
-      // Apply repository filter
-      if (selectedRepo !== 'all') {
-        filtered = filtered.filter(j => j.repo === selectedRepo);
-      }
-
-      // Apply status filter
-      if (currentFilter !== 'all') {
-        filtered = filtered.filter(j => j.status === currentFilter);
-      }
-
-      // Apply text search query
+    function getFilteredJobs() {
+      let jobs = allJobs;
+      if (selectedOrg !== 'all') jobs = jobs.filter(j => j.repo && j.repo.startsWith(selectedOrg + '/'));
+      if (selectedRepo !== 'all') jobs = jobs.filter(j => j.repo === selectedRepo);
+      if (currentFilter !== 'all') jobs = jobs.filter(j => j.status === currentFilter);
       if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        filtered = filtered.filter(j => 
-          j.repo.toLowerCase().includes(query) ||
-          j.issueTitle.toLowerCase().includes(query) ||
-          (j.pr && j.pr.toString().includes(query))
+        const q = searchQuery.toLowerCase();
+        jobs = jobs.filter(j =>
+          (j.repo && j.repo.toLowerCase().includes(q)) ||
+          (j.issueTitle && j.issueTitle.toLowerCase().includes(q)) ||
+          (j.prNumber && String(j.prNumber).includes(q))
         );
       }
+      return jobs;
+    }
 
-      document.getElementById('table-count').innerText = filtered.length;
-      
+    function getStatusLabel(status) {
+      const map = { 'in-progress': 'Active', blocked: 'Blocked', failed: 'Failed', review: 'In Review', done: 'Completed', todo: 'Queued' };
+      return map[status] || status;
+    }
+
+    function formatRelativeTime(isoString) {
+      if (!isoString) return '—';
+      const ms = Date.now() - new Date(isoString).getTime();
+      if (isNaN(ms)) return isoString;
+      const minutes = Math.floor(ms / 60000);
+      if (minutes < 1) return 'just now';
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      return `${days}d ago`;
+    }
+
+    function renderTable() {
+      const filtered = getFilteredJobs();
+      const tbody = document.getElementById('jobs-tbody');
+      const wrapper = document.getElementById('table-wrapper');
+      const emptyNoInstalls = document.getElementById('empty-no-installs');
+      const emptyNoJobs = document.getElementById('empty-no-jobs');
+
+      // Empty state: no installations at all
+      if (allJobs.length === 0 && organizations.length === 0 && repositories.length === 0) {
+        emptyNoInstalls.classList.remove('hidden');
+        emptyNoJobs.classList.add('hidden');
+        wrapper.classList.add('hidden');
+        document.getElementById('table-count').textContent = '0';
+        return;
+      }
+
+      emptyNoInstalls.classList.add('hidden');
+
+      // Empty state: no jobs for this filter
+      if (filtered.length === 0) {
+        emptyNoJobs.classList.remove('hidden');
+        wrapper.classList.add('hidden');
+        document.getElementById('table-count').textContent = '0';
+        return;
+      }
+
+      emptyNoJobs.classList.add('hidden');
+      wrapper.classList.remove('hidden');
+
+      document.getElementById('table-count').textContent = filtered.length;
+
       const filterTitles = {
-        all: "All Tracked Jobs",
-        'in-progress': "Active Jobs",
-        blocked: "Blocked Jobs",
-        failed: "Failed Dispatches",
-        review: "In-Review (Stale) Jobs",
-        done: "Recently Completed Work"
+        all: 'All Tracked Jobs', 'in-progress': 'Active Jobs', blocked: 'Blocked Jobs',
+        failed: 'Failed Dispatches', review: 'In-Review (Stale) Jobs', done: 'Recently Completed Work', todo: 'Queued Jobs',
       };
-      document.getElementById('table-title').innerText = filterTitles[currentFilter];
+      document.getElementById('table-title').textContent = filterTitles[currentFilter] || 'Jobs';
+
+      tbody.innerHTML = '';
 
       filtered.forEach(job => {
         const row = document.createElement('tr');
-        
-        // Repolink cell
+        row.className = 'job-row';
+        row.onclick = () => openDrawer(job.id);
+
         const repoTd = document.createElement('td');
-        repoTd.innerHTML = `<a href="https://github.com/${job.repo}" target="_blank" class="repo-link">${job.repo}</a>`;
+        repoTd.innerHTML = `<a href="https://github.com/${job.repo}" target="_blank" class="repo-link" onclick="event.stopPropagation()">${job.repo}</a>`;
         row.appendChild(repoTd);
 
-        // Issue title cell
         const issueTd = document.createElement('td');
-        issueTd.innerHTML = `<a href="https://github.com/${job.repo}/issues/${job.issueNum}" target="_blank" class="issue-link">#${job.issueNum}: ${job.issueTitle}</a>`;
+        issueTd.innerHTML = `<a href="https://github.com/${job.repo}/issues/${job.issueNum}" target="_blank" class="issue-link" onclick="event.stopPropagation()">#${job.issueNum}: ${escapeHtml(job.issueTitle)}</a>`;
         row.appendChild(issueTd);
 
-        // Status badge cell
         const statusTd = document.createElement('td');
         statusTd.innerHTML = `<span class="badge badge-${job.status}">${getStatusLabel(job.status)}</span>`;
         row.appendChild(statusTd);
 
-        // Attempt cell
         const attemptTd = document.createElement('td');
-        attemptTd.innerText = `Attempt #${job.attempt}`;
+        attemptTd.textContent = `Attempt #${job.attempt}`;
         row.appendChild(attemptTd);
 
-        // Branch / PR cell
         const prTd = document.createElement('td');
-        if (job.pr) {
-          prTd.innerHTML = `<a href="${job.prUrl}" target="_blank" class="external-link"><i data-feather="git-pull-request" style="width: 14px; height: 14px;"></i> PR #${job.pr}</a>`;
+        if (job.prNumber) {
+          prTd.innerHTML = `<a href="https://github.com/${job.repo}/pull/${job.prNumber}" target="_blank" class="external-link" onclick="event.stopPropagation()"><i data-feather="git-pull-request" style="width:14px;height:14px;"></i> PR #${job.prNumber}</a>`;
+        } else if (job.branchName) {
+          prTd.innerHTML = `<span style="color:var(--text-secondary);font-family:monospace;font-size:13px;">${escapeHtml(job.branchName)}</span>`;
         } else {
-          prTd.innerHTML = `<span style="color: var(--text-secondary); font-family: monospace;">${job.branch}</span>`;
+          prTd.innerHTML = `<span style="color:var(--text-secondary);">—</span>`;
         }
         row.appendChild(prTd);
 
-        // Last updated cell
         const updatedTd = document.createElement('td');
-        updatedTd.innerText = job.lastUpdated;
+        updatedTd.textContent = formatRelativeTime(job.updatedAt);
+        updatedTd.title = job.updatedAt || '';
         row.appendChild(updatedTd);
 
         tbody.appendChild(row);
       });
 
-      // Rerender Feather icons inside dynamically created elements
       feather.replace();
     }
 
-    // Switch active navigation tab
+    // ─── Job detail drawer ────────────────────────────────────────────────────
+
+    async function openDrawer(jobId) {
+      const drawer = document.getElementById('job-drawer');
+      const drawerBody = document.getElementById('drawer-body');
+      const drawerTitle = document.getElementById('drawer-title');
+
+      drawer.classList.remove('hidden');
+      drawerTitle.textContent = 'Job Detail';
+      drawerBody.innerHTML = `<div class="drawer-loading"><div class="spinner spinner-sm"></div><span>Loading…</span></div>`;
+
+      try {
+        const data = await apiFetch(`/api/jobs/${jobId}`);
+        const job = data.job;
+        const attempts = data.attempts || [];
+
+        drawerTitle.textContent = `#${job.issue_number ?? job.issueNum}: ${job.issue_title ?? job.issueTitle ?? ''}`;
+
+        const repo = job.repository ?? job.repo ?? '';
+        const issueNum = job.issue_number ?? job.issueNum ?? '';
+        const prNum = job.pr_number ?? job.prNumber ?? null;
+        const branch = job.branch_name ?? job.branchName ?? null;
+        const blockedReason = job.blocked_reason ?? null;
+        const status = job.current_status ?? job.status ?? '';
+
+        const attemptsHtml = attempts.length > 0
+          ? `<div class="drawer-section-label">Attempts</div>
+             <div class="attempts-list">
+               ${attempts.map(a => `
+                 <div class="attempt-row">
+                   <span class="attempt-num">#${a.attempt_number}</span>
+                   <span class="badge badge-${a.status === 'succeeded' ? 'done' : a.status === 'failed' ? 'failed' : 'in-progress'}">${a.status}</span>
+                   <span class="attempt-time">${formatRelativeTime(a.created_at)}</span>
+                 </div>`).join('')}
+             </div>`
+          : '';
+
+        drawerBody.innerHTML = `
+          <div class="drawer-meta">
+            <div class="drawer-section-label">Status</div>
+            <span class="badge badge-${status}">${getStatusLabel(status)}</span>
+
+            ${blockedReason ? `<div class="drawer-section-label" style="margin-top:16px;">Blocked Reason</div><p class="blocked-reason-text">${escapeHtml(blockedReason)}</p>` : ''}
+
+            <div class="drawer-section-label" style="margin-top:16px;">Links</div>
+            <div class="drawer-links">
+              <a href="https://github.com/${repo}/issues/${issueNum}" target="_blank" class="external-link">
+                <i data-feather="link" style="width:14px;height:14px;"></i> Issue #${issueNum}
+              </a>
+              ${prNum ? `<a href="https://github.com/${repo}/pull/${prNum}" target="_blank" class="external-link">
+                <i data-feather="git-pull-request" style="width:14px;height:14px;"></i> PR #${prNum}
+              </a>` : ''}
+              ${branch ? `<span class="drawer-branch"><i data-feather="git-branch" style="width:14px;height:14px;"></i> ${escapeHtml(branch)}</span>` : ''}
+            </div>
+
+            ${attemptsHtml}
+
+            <div class="drawer-section-label" style="margin-top:16px;">Last Updated</div>
+            <p style="color:var(--text-secondary);font-size:14px;">${formatRelativeTime(job.updated_at ?? job.updatedAt)}</p>
+          </div>
+        `;
+
+        feather.replace();
+
+      } catch (err) {
+        drawerBody.innerHTML = `<div class="drawer-error"><i data-feather="alert-triangle" style="width:24px;height:24px;color:var(--color-rose);"></i><p>${err.message}</p></div>`;
+        feather.replace();
+      }
+    }
+
+    function closeDrawer() {
+      document.getElementById('job-drawer').classList.add('hidden');
+    }
+
+    // ─── Filter handlers ──────────────────────────────────────────────────────
+
     function switchTab(tabName) {
       currentFilter = tabName;
-      
-      // Update active nav class
-      const navItems = document.querySelectorAll('.nav-item');
-      navItems.forEach(item => {
-        item.classList.remove('active');
-        const iconName = item.querySelector('svg').getAttribute('data-feather');
-        // Simple map of tabName to corresponding navbar items
-        const tabMap = {
-          all: 'grid',
-          'in-progress': 'play',
-          blocked: 'slash',
-          failed: 'alert-octagon',
-          review: 'eye',
-          done: 'check-circle'
-        };
-        if (tabMap[tabName] === iconName) {
-          item.classList.add('active');
-        }
-      });
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      const navEl = document.getElementById(`nav-${tabName}`);
+      if (navEl) navEl.classList.add('active');
 
-      // Update page title
-      const titleHeading = {
-        all: "Operations Dashboard",
-        'in-progress': "Active Tasks",
-        blocked: "Blocked Tasks",
-        failed: "Failed runs",
-        review: "Review Backlog",
-        done: "Completed Workloads"
-      };
-      document.getElementById('page-title-heading').innerText = titleHeading[tabName];
+      const titles = { all: 'Operations Dashboard', 'in-progress': 'Active Tasks', blocked: 'Blocked Tasks', failed: 'Failed Runs', review: 'Review Backlog', done: 'Completed Workloads', todo: 'Queued Tasks' };
+      document.getElementById('page-title-heading').textContent = titles[tabName] || 'Jobs';
 
       renderTable();
     }
 
-    // Handle dropdown filter switches
     function handleOrgFilter() {
       selectedOrg = document.getElementById('org-filter').value;
       populateRepoFilter();
@@ -395,19 +575,27 @@
       renderTable();
     }
 
-    // Handle search query updates
     function handleSearch() {
       searchQuery = document.getElementById('search-bar').value;
       renderTable();
     }
 
-    // Page Load Setup
-    window.onload = () => {
-      populateRepoFilter();
-      updateCounts();
-      renderTable();
-      feather.replace();
+    // ─── Utilities ────────────────────────────────────────────────────────────
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
+
+    window.onload = () => {
+      feather.replace();
+      loadData();
+
+      // Auto-refresh every 60 seconds
+      setInterval(loadData, 60_000);
+    };
   </script>
 </body>
 </html>
