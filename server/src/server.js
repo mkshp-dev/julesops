@@ -7,6 +7,8 @@ const { URL } = require('url');
 const db = require('./db');
 const store = require('./store');
 const { handleInstallationEvent, handleInstallationRepositoriesEvent } = require('./installation-handlers');
+const { sessionMiddleware } = require('./session');
+const { handleOAuthStart, handleOAuthCallback, handleLogout } = require('./oauth');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -168,6 +170,9 @@ async function handleRequest(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || `${HOST}:${PORT}`}`);
   const { pathname } = url;
 
+  // Run session middleware on every request
+  sessionMiddleware(req, res);
+
   // CORS preflight
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
@@ -180,6 +185,40 @@ async function handleRequest(req, res) {
   }
 
   try {
+    // ── Auth routes ────────────────────────────────────────────────────────
+
+    if (req.method === 'GET' && pathname === '/auth/github') {
+      handleOAuthStart(req, res);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/auth/github/callback') {
+      await handleOAuthCallback(req, res);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/auth/logout') {
+      handleLogout(req, res);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/me') {
+      if (!req.session) {
+        sendJson(res, 401, { ok: false, error: 'not authenticated' });
+        return;
+      }
+      sendJson(res, 200, {
+        ok: true,
+        user: {
+          githubId: req.session.githubId,
+          login: req.session.githubLogin,
+          name: req.session.githubName,
+          avatarUrl: req.session.githubAvatarUrl,
+        },
+      });
+      return;
+    }
+
     // ── Health endpoints ───────────────────────────────────────────────────
 
     if (req.method === 'GET' && pathname === '/health') {
