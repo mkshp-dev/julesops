@@ -223,3 +223,23 @@ Once those are stable across multiple repos, a GitHub App becomes a packaging an
 - adopt in multiple external repositories
 - refine config contract and prompt protocol
 - evaluate reusable actions, GitHub App packaging, and hosted control plane work
+
+---
+
+# 10. GitHub App permission model (Phase 4)
+
+When transition packaging moves to a hosted GitHub App in Phase 4 to simplify installation and multi-repository visibility, the App must follow the principle of least privilege. The required permission scopes are:
+
+## 10.1 Repository permissions
+
+| Scope | Permission | Purpose |
+| --- | --- | --- |
+| **Metadata** | `Read-only` | Access basic repository information, search capabilities, and webhook source validation. |
+| **Issues** | `Read & Write` | Observe task issue creation/comments, manage state labels (`todo`, `in-progress`, etc.), and post timeline comments. |
+| **Pull Requests** | `Read & Write` | Check base branch targets, verify linking references, edit PR labels, and post warning/status comments on PR timelines. |
+| **Contents** | `Read-only` | Read `.github/julesops.yml` and instruction files (`.github/jules-core.md`, `.github/jules-repo.md`) to assemble prompts. *Note: Upgrade to `Read & Write` only if features like automated kit updates or file injection are enabled.* |
+| **Actions** | `Read-only` | Monitor workflow run dispatch outcomes and dispatch state status checks. |
+
+## 10.2 Organization permissions
+
+No organization-wide read or write permissions are required, ensuring that the App's access boundaries are strictly isolated to the repositories where users explicitly install it.

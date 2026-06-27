@@ -114,12 +114,12 @@ Goal: introduce a GitHub App only for capabilities that are awkward or unreliabl
 
 ### Development tasks
 
-- Define the GitHub App permission model:
+- Define the GitHub App permission model: [DONE]
   - repository metadata: read
   - issues: read/write
-  - pull requests: read/write or read plus issue writes, depending on implementation
-  - actions/workflows: only if truly needed
-  - contents: read, and write only if the app installs files directly
+  - pull requests: read/write
+  - actions/workflows: read-only
+  - contents: read (write only if App installs files directly)
 - Decide whether the App installs files, comments instructions, or only monitors existing workflow-kit installs.
 - Design webhook handlers for issue, pull request, issue comment, workflow run, and installation events.
 - Define a hosted job model for observing state without replacing GitHub as the source of truth.
