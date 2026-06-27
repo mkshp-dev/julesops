@@ -46,3 +46,12 @@ Verify the installer copies and configures files properly:
 - **Convention**: Adhere to [Conventional Commits](https://www.conventionalcommits.org/) standards for all commit messages.
 - **Issue Linking**: Ensure all Pull Requests link to a tracked Jules issue in the description (e.g., `Closes #123`) to satisfy strict issue validation checks.
 - **Branch Target**: Target the `main` branch.
+---
+
+## Issue Template Ownership
+
+The source repository's `.github/ISSUE_TEMPLATE/` files are for maintaining JulesOps itself, such as bug reports, feature requests, and adoption feedback.
+
+The installed adopter issue template is `templates/jules-task.yml`. The installer copies only that template into target repositories as `.github/ISSUE_TEMPLATE/jules-task.yml`.
+
+Do not treat the JulesOps source repository as self-installed unless that is explicitly part of a task.

@@ -17,6 +17,14 @@ The strategic shape is:
 - Prefer boring, inspectable GitHub-native behavior until a hosted component solves a real operational problem.
 - Every release step should improve testability, installability, or supportability.
 
+
+## Current implementation status
+
+Current stage: `v0.3` public-beta workflow kit hardening.
+
+- The free single-repository workflow kit is the implemented product surface.
+- The GitHub App, hosted backend, paid dashboard, billing, RBAC, and admin tooling are designed or prototyped unless backed by runnable code in this repository.
+- Marketplace launch should wait until the hosted components are implemented, tested, and supported by legal/privacy/terms documentation.
 ## Phase 1 - Free core hardening
 
 Goal: make the current workflow kit safe to install repeatedly into test repositories.
@@ -90,7 +98,7 @@ Goal: make JulesOps presentable and supportable for early external adopters.
 - Add `SECURITY.md` covering secrets, workflow permissions, and responsible disclosure. [DONE]
 - Add GitHub issue templates for bug reports, feature requests, and adoption feedback. [DONE]
 - Add a public beta checklist to docs. [DONE]
-- Add screenshots or terminal examples for install and validation. [DONE]
+- Add screenshots or terminal examples for install and validation. [PARTIAL]
 - Decide initial semantic versioning, likely `v0.x` until the GitHub App/control plane exists. [DONE]
 - Tag the first public beta release (v0.3.0). [DONE]
 
@@ -114,17 +122,17 @@ Goal: introduce a GitHub App only for capabilities that are awkward or unreliabl
 
 ### Development tasks
 
-- Define the GitHub App permission model: [DONE]
+- Define the GitHub App permission model: [DESIGNED]
   - repository metadata: read
   - issues: read/write
   - pull requests: read/write
   - actions/workflows: read-only
   - contents: read (write only if App installs files directly)
-- Decide whether the App installs files, comments instructions, or only monitors existing workflow-kit installs. [DONE]
-- Design webhook handlers for issue, pull request, issue comment, workflow run, and installation events. [DONE]
-- Define a hosted job model for observing state without replacing GitHub as the source of truth. [DONE]
-- Add a minimal backend schema for installations, repositories, jobs, attempts, and events. [DONE]
-- Add local development docs for the App and webhook processing. [DONE]
+- Decide whether the App installs files, comments instructions, or only monitors existing workflow-kit installs. [DESIGNED]
+- Design webhook handlers for issue, pull request, issue comment, workflow run, and installation events. [DESIGNED]
+- Define a hosted job model for observing state without replacing GitHub as the source of truth. [DESIGNED]
+- Add a minimal backend schema for installations, repositories, jobs, attempts, and events. [DESIGNED]
+- Add local development docs for the App and webhook processing. [DESIGNED]
 
 ### Exit criteria
 
@@ -146,17 +154,17 @@ Goal: build the first paid feature set around multi-repo operations.
 
 ### Development tasks
 
-- Build dashboard views for: [DONE]
+- Build dashboard views for: [PARTIAL - STATIC PROTOTYPE]
   - active jobs
   - blocked jobs
   - failed dispatches
   - stale review items
   - recently completed work
-- Store normalized job and attempt history. [DONE]
-- Add repository filters, organization filters, and status filters. [DONE]
-- Add notification hooks for stale or failed work, starting with email or webhook destinations. [DONE]
-- Add organization membership and authorization model. [DONE]
-- Add billing integration only after the dashboard value is proven in private beta. [DONE]
+- Store normalized job and attempt history. [DESIGNED]
+- Add repository filters, organization filters, and status filters. [PARTIAL - STATIC PROTOTYPE]
+- Add notification hooks for stale or failed work, starting with email or webhook destinations. [DESIGNED]
+- Add organization membership and authorization model. [DESIGNED]
+- Add billing integration only after the dashboard value is proven in private beta. [DESIGNED]
 
 ### Exit criteria
 
@@ -177,7 +185,7 @@ Goal: prepare for a GitHub Marketplace listing and public launch.
 
 ### Development tasks
 
-- Prepare Marketplace listing copy: [DONE]
+- Prepare Marketplace listing copy: [DRAFT]
   - short description
   - long description
   - screenshots
@@ -185,7 +193,7 @@ Goal: prepare for a GitHub Marketplace listing and public launch.
   - support URL
   - privacy policy URL
   - terms URL
-- Prepare public docs for: [DONE]
+- Prepare public docs for: [PARTIAL]
   - install
   - upgrade
   - uninstall
@@ -193,10 +201,10 @@ Goal: prepare for a GitHub Marketplace listing and public launch.
   - security model
   - data retention
   - billing and plan limits
-- Add operational monitoring for the hosted App and dashboard. [DONE]
-- Add admin tools for support, installation inspection, and failed webhook replay. [DONE]
-- Run a private beta with 3-5 real users or repositories. [DONE]
-- Freeze the `v1.0` free-core config contract or clearly mark remaining unstable fields. [DONE]
+- Add operational monitoring for the hosted App and dashboard. [DESIGNED]
+- Add admin tools for support, installation inspection, and failed webhook replay. [DESIGNED]
+- Run a private beta with 3-5 real users or repositories. [TODO]
+- Freeze the `v1.0` free-core config contract or clearly mark remaining unstable fields. [PARTIAL]
 
 ### Exit criteria
 

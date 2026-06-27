@@ -281,11 +281,12 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           AUTHOR_ASSOC: ${{ github.event.comment.author_association }}
           COMMENTER: ${{ github.event.comment.user.login }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
           set -euo pipefail
 
-          # Normalize comment body to lowercase and trim whitespace
-          BODY_LOWER=$(echo "${{ github.event.comment.body }}" | tr '[:upper:]' '[:lower:]' | xargs)
+          # Treat the comment body as data. Do not interpolate github.event.comment.body directly into shell.
+          BODY_LOWER="$(printf '%s' "$COMMENT_BODY" | tr '[:upper:]' '[:lower:]' | xargs)"
 
           if [[ "$BODY_LOWER" != "/jules retry" && "$BODY_LOWER" != "/jules requeue" ]]; then
             echo "Not a recognized retry command. Skipping."

@@ -155,6 +155,14 @@ Recommended default labels:
 - `status:done`
 
 These labels are the v1 state model.
+You can create or preview the required labels with:
+
+```powershell
+.\scripts\bootstrap-labels.ps1 -TargetRepo "C:\path\to\target-repo"
+.\scripts\bootstrap-labels.ps1 -TargetRepo "C:\path\to\target-repo" -DryRun
+```
+
+Run this from the JulesOps source repository. If GitHub authentication or a GitHub remote is unavailable, the script prints a manual label checklist.
 
 ---
 

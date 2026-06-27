@@ -22,6 +22,14 @@ function Assert-Contains {
   }
 }
 
+function Assert-NotContains {
+  param([string]$Path, [string]$Pattern, [string]$Message)
+  $content = Get-Content -LiteralPath $Path -Raw
+  if ($content -match $Pattern) {
+    throw $Message
+  }
+}
+
 function Parse-YamlValue {
   param([string]$RawVal)
   if ($null -eq $RawVal) { return $null }
@@ -258,6 +266,7 @@ Validate-JulesOpsConfig (Join-Path $kitRoot "templates/julesops.yml") $null
 
 Assert-Contains (Join-Path $kitRoot "workflows/jules-dispatch.yml") "jules_api_key:\s*\$\{\{\s*secrets\.JULES_API_KEY\s*\}\}" "Dispatch workflow must pass the JULES_API_KEY secret to Jules."
 Assert-Contains (Join-Path $kitRoot "workflows/jules-watchdog.yml") "JulesOps Watchdog" "Watchdog workflow must include the watchdog comment marker."
+Assert-NotContains (Join-Path $kitRoot "templates/resolve-config.py") "import\s+yaml|from\s+yaml\s+import" "Resolver must not depend on PyYAML or undeclared YAML packages."
 
 if ($TargetRepo) {
   $targetRoot = (Resolve-Path -LiteralPath $TargetRepo).Path

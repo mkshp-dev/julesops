@@ -1,13 +1,13 @@
 # JulesOps Operational Monitoring & Admin Tools
 
-This document describes the operational monitoring capabilities, health checks, and admin tooling available to JulesOps operators and support staff for the hosted App and dashboard.
+This document describes the planned operational monitoring capabilities, health checks, and admin tooling for the future hosted App and dashboard. These endpoints and admin APIs are design targets until a runnable backend exists in this repository.
 
 ---
 
 ## 1. Operational Monitoring
 
 ### 1.1 Health Check Endpoints
-The JulesOps backend exposes the following health check endpoints:
+The future JulesOps backend should expose the following health check endpoints:
 
 | Endpoint | Description |
 | --- | --- |
@@ -19,7 +19,7 @@ The JulesOps backend exposes the following health check endpoints:
 These endpoints should be polled by an external uptime monitor (e.g. UptimeRobot, Better Uptime) every 60 seconds.
 
 ### 1.2 Application Metrics
-The following Prometheus-compatible metrics are exported at `/metrics`:
+The future backend should export the following Prometheus-compatible metrics at `/metrics`:
 
 | Metric | Description |
 | --- | --- |
@@ -44,7 +44,7 @@ The following conditions should trigger operator PagerDuty/Slack alerts:
 ## 2. Admin Tools
 
 ### 2.1 Installation Inspection
-Admins can inspect any installation via an internal admin API:
+The future admin API should allow operators to inspect installations:
 
 ```bash
 # View installation details
@@ -58,7 +58,7 @@ GET /admin/installations/{installation_id}/jobs?status=in-progress
 ```
 
 ### 2.2 Failed Webhook Replay
-When a webhook handler fails (e.g. DB timeout), the raw payload is stored in the `events` table for replay. Admin tools allow replaying failed events:
+When a webhook handler fails (e.g. DB timeout), the raw payload is stored in the `events` table for replay. Planned admin tools should allow replaying failed events:
 
 ```bash
 # List failed events in last 24 hours
@@ -69,7 +69,7 @@ POST /admin/events/{event_id}/replay
 ```
 
 ### 2.3 Job Management
-Admins can force-transition jobs in cases where automated self-healing fails:
+Future admins may force-transition jobs in cases where automated self-healing fails:
 
 ```bash
 # Force-close a stale job
@@ -85,14 +85,14 @@ POST /admin/jobs/{job_id}/retry
 ## 3. Support Tooling
 
 ### 3.1 Support Lookup
-Support engineers can look up an installation by GitHub org slug or installation ID:
+Future support engineers should be able to look up an installation by GitHub org slug or installation ID:
 
 ```bash
 GET /admin/support/lookup?org=mkshp-dev
 ```
 
 ### 3.2 Audit Log Access
-Full event audit trails are accessible for compliance queries:
+Full event audit trails should be accessible for compliance queries:
 
 ```bash
 GET /admin/events?repository_id=123&event_type=pr_merged&limit=50

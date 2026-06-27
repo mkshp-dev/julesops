@@ -405,3 +405,13 @@ body {
   background-color: var(--bg-sidebar);
   color: var(--text-primary);
 }
+.prototype-banner {
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fde68a;
+  font-size: 14px;
+  font-weight: 500;
+}

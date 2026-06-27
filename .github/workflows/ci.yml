@@ -1,0 +1,50 @@
+name: JulesOps Kit CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate-kit:
+    name: Validate kit and installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate source kit
+        shell: pwsh
+        run: .\scripts\validate-kit.ps1
+
+      - name: Smoke test installer and resolver
+        shell: pwsh
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP ("julesops-ci-" + [guid]::NewGuid().ToString("N"))
+          New-Item -ItemType Directory -Force -Path $target | Out-Null
+          git -C $target init
+          Set-Content -LiteralPath (Join-Path $target "README.md") -Value "# JulesOps CI fixture"
+          git -C $target add README.md
+          git -C $target -c user.email=ci@example.com -c user.name="JulesOps CI" commit -m init
+
+          .\scripts\install-julesops.ps1 -TargetRepo $target -BaseBranch master
+          .\scripts\validate-kit.ps1 -TargetRepo $target
+
+          Push-Location $target
+          python .github\resolve-config.py
+          Pop-Location
+
+      - name: Smoke test label checklist dry run
+        shell: pwsh
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP ("julesops-labels-" + [guid]::NewGuid().ToString("N"))
+          New-Item -ItemType Directory -Force -Path $target | Out-Null
+          git -C $target init
+          Set-Content -LiteralPath (Join-Path $target "README.md") -Value "# JulesOps label fixture"
+          git -C $target add README.md
+          git -C $target -c user.email=ci@example.com -c user.name="JulesOps CI" commit -m init
+
+          .\scripts\install-julesops.ps1 -TargetRepo $target -BaseBranch master
+          .\scripts\bootstrap-labels.ps1 -TargetRepo $target -DryRun

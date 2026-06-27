@@ -10,6 +10,29 @@ This backlog turns the current review findings into detailed implementation issu
 
 ---
 
+## Current status after Codex pass
+
+Resolved in the current important-issues pass:
+
+- Issue 1: Resolver no longer depends on PyYAML; validator guards against reintroducing it.
+- Issue 2: Retry/requeue command parsing no longer interpolates comment body directly into shell.
+- Issue 3: Public and private beta docs now use the nested `julesops:` config schema.
+- Issue 4: Label bootstrapper now supports default current-directory usage and `-DryRun`; docs use executable commands.
+- Issue 5: Release plan now distinguishes implemented, designed, partial, and todo work.
+- Issue 6: Dashboard is clearly marked as a mock/prototype.
+- Issue 7: Hosted backend/App docs were downgraded to planned/design language where no runnable backend exists.
+- Issue 8: Source-repo CI workflow added for validation and smoke tests.
+- Issue 9: Public beta checklist updated for current installer output and version.
+- Issue 10: Added `LICENSE`, `PRIVACY.md`, and `TERMS.md`; marketplace copy links to real files.
+- Issue 12: `SECURITY.md` now matches workflow permission intent and documents comment-command safety.
+- Issue 13: Added `docs/release-checklist.md`.
+- Issue 14: `CONTRIBUTING.md` now documents source issue templates vs installed adopter templates.
+
+Remaining task suitable for a smaller/inferior model:
+
+- Issue 11: Build out the fixture repository and optional fixture smoke-test script. This is mostly mechanical test-fixture work after the current CI smoke test exists.
+---
+
 # Issue 1 - Fix config resolver portability by removing undeclared PyYAML dependency
 
 Priority: `P0`

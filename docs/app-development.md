@@ -1,6 +1,6 @@
 # GitHub App Local Development Guide
 
-This guide describes how to set up, develop, and test the **JulesOps GitHub App** and webhook processing backend locally.
+This guide describes the planned local setup for the future **JulesOps GitHub App** and webhook processing backend. It is a design/development guide until a runnable backend exists in this repository.
 
 ---
 
@@ -60,9 +60,9 @@ DATABASE_URL=postgresql://localhost:5472/julesops_dev
 
 ---
 
-## 4. Testing Webhook Handlers
+## 4. Testing Webhook Handlers (Future Backend)
 
-To verify your local setup:
+When the backend implementation exists, verify your local setup with:
 
 1. **Install Dev App**: Navigate to your GitHub App settings page, click **Install App**, and install it onto a test repository.
 2. **Launch Dev Server**: Start your local development backend server.
