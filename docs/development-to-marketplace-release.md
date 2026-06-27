@@ -156,7 +156,7 @@ Goal: build the first paid feature set around multi-repo operations.
 - Add repository filters, organization filters, and status filters. [DONE]
 - Add notification hooks for stale or failed work, starting with email or webhook destinations. [DONE]
 - Add organization membership and authorization model. [DONE]
-- Add billing integration only after the dashboard value is proven in private beta.
+- Add billing integration only after the dashboard value is proven in private beta. [DONE]
 
 ### Exit criteria
 

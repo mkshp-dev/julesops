@@ -484,3 +484,50 @@ CREATE TABLE memberships (
     PRIMARY KEY (user_id, installation_id)
 );
 ```
+
+---
+
+# 13. Billing Integration (Phase 5)
+
+Billing is intentionally designed as an additive layer that activates without modifying the free workflow kit contract. Users who do not subscribe to a paid tier continue to use the free YAML kit unaffected.
+
+## 13.1 Design Principles
+- **Free tier forever**: All GitHub Actions-based workflow automation (dispatch, state-sync, watchdog) is always free and open.
+- **Billing gate**: Only the hosted control plane features (multi-repo dashboard, advanced notifications, team roles, job history) sit behind billing.
+- **Stripe integration**: Stripe is the recommended payment processor. JulesOps stores only subscription metadata — no raw payment card data.
+
+## 13.2 Plans Overview
+
+| Plan | Price | Included Features |
+| --- | --- | --- |
+| **Free** | $0/month | Full YAML workflow kit, single-repo dashboard view |
+| **Pro** | $9/month per org | Multi-repo dashboard, notifications, 90-day job history |
+| **Team** | $29/month per org | All Pro features + team roles (RBAC), priority support |
+
+## 13.3 Configuration Schema
+Billing state is stored in the control plane database. No `.github/julesops.yml` changes are required by the adopter:
+
+```sql
+-- Track billing subscriptions
+CREATE TABLE subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    installation_id BIGINT REFERENCES installations(id) ON DELETE CASCADE UNIQUE,
+    stripe_customer_id VARCHAR(255),
+    stripe_subscription_id VARCHAR(255),
+    plan VARCHAR(50) NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'team')),
+    status VARCHAR(50) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'past_due', 'trialing')),
+    current_period_end TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## 13.4 Stripe Webhook Events
+The billing system subscribes to the following Stripe webhooks to keep subscription state in sync:
+
+| Event | Handler Action |
+| --- | --- |
+| `customer.subscription.created` | Activate plan, update `subscriptions.status = active` |
+| `customer.subscription.updated` | Sync plan tier changes |
+| `customer.subscription.deleted` | Downgrade to free tier, preserve data for 30 days |
+| `invoice.payment_failed` | Set `subscriptions.status = past_due`, notify org Owner |
