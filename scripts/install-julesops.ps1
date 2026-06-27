@@ -11,7 +11,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$KitVersion = "v0.1.0"
+$KitVersion = "v0.3.0"
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $kitRoot = Split-Path -Parent $scriptRoot

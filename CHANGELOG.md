@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - 2026-06-27
+## [0.3.0] - 2026-06-27
+
+This is the first public beta release of JulesOps, consolidating all Phase 2 and Phase 3 packaging features.
 
 ### Added
 - **Comment-Command Requeue/Retry Support**: Maintainers can trigger issue retries using `/jules retry` or `/jules requeue` comments (Issue #10).

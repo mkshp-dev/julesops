@@ -42,3 +42,15 @@ Do not move basic single-repository orchestration behind the paid layer. The pai
 ## Release plan
 
 See [development-to-marketplace-release.md](development-to-marketplace-release.md) for the development sequence from workflow kit to Marketplace launch.
+
+## Semantic Versioning Boundaries
+
+JulesOps adheres to Semantic Versioning (SemVer) with the following specific boundaries:
+
+1. **Pre-v1.0.0 (v0.x.y)**:
+   - Used during the public beta and development phases of the free core workflow kit.
+   - **Minor bumps (e.g., v0.3.0 -> v0.4.0)**: Reserved for breaking changes, such as modifying the `julesops.yml` configuration schema, changing workflow trigger designs, or updating required label defaults.
+   - **Patch bumps (e.g., v0.3.0 -> v0.3.1)**: Reserved for backward-compatible additions, documentation updates, bug fixes, or non-breaking workflow optimizations.
+2. **v1.0.0 and beyond**:
+   - Tagged once the GitHub App foundation and basic hosted organization control plane are stable and ready for general availability in the GitHub Marketplace.
+   - Standard SemVer rules apply (major bumps for breaking changes, minor for features, patch for bug fixes).

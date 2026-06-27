@@ -85,14 +85,14 @@ Goal: make JulesOps presentable and supportable for early external adopters.
 
 ### Development tasks
 
-- Add `CHANGELOG.md`.
-- Add `CONTRIBUTING.md`.
-- Add `SECURITY.md` covering secrets, workflow permissions, and responsible disclosure.
-- Add GitHub issue templates for bug reports, feature requests, and adoption feedback.
-- Add a public beta checklist to docs.
-- Add screenshots or terminal examples for install and validation.
-- Decide initial semantic versioning, likely `v0.x` until the GitHub App/control plane exists.
-- Tag the first public beta release.
+- Add `CHANGELOG.md`. [DONE]
+- Add `CONTRIBUTING.md`. [DONE]
+- Add `SECURITY.md` covering secrets, workflow permissions, and responsible disclosure. [DONE]
+- Add GitHub issue templates for bug reports, feature requests, and adoption feedback. [DONE]
+- Add a public beta checklist to docs. [DONE]
+- Add screenshots or terminal examples for install and validation. [DONE]
+- Decide initial semantic versioning, likely `v0.x` until the GitHub App/control plane exists. [DONE]
+- Tag the first public beta release (v0.3.0). [DONE]
 
 ### Exit criteria
 
