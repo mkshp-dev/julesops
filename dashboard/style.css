@@ -382,3 +382,26 @@ body {
     box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
   }
 }
+
+/* Dropdown Filters */
+.filter-select {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glow);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-select:hover, .filter-select:focus {
+  border-color: var(--border-active);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.filter-select option {
+  background-color: var(--bg-sidebar);
+  color: var(--text-primary);
+}

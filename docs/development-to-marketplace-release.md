@@ -153,7 +153,7 @@ Goal: build the first paid feature set around multi-repo operations.
   - stale review items
   - recently completed work
 - Store normalized job and attempt history. [DONE]
-- Add repository filters, organization filters, and status filters.
+- Add repository filters, organization filters, and status filters. [DONE]
 - Add notification hooks for stale or failed work, starting with email or webhook destinations.
 - Add organization membership and authorization model.
 - Add billing integration only after the dashboard value is proven in private beta.

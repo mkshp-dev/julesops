@@ -36,9 +36,25 @@
     <header class="top-bar">
       <h2 class="page-title" id="page-title-heading">Operations Dashboard</h2>
       
-      <div class="search-box">
-        <i data-feather="search" style="color: var(--text-secondary); width: 18px; height: 18px;"></i>
-        <input type="text" id="search-bar" class="search-input" placeholder="Search jobs, repos, PRs..." oninput="handleSearch()">
+      <div style="display: flex; gap: 15px; align-items: center;">
+        <!-- Organization Filter Dropdown -->
+        <select id="org-filter" class="filter-select" onchange="handleOrgFilter()">
+          <option value="all">All Organizations</option>
+          <option value="mkshp-dev">mkshp-dev</option>
+          <option value="aggregator-org">aggregator-org</option>
+          <option value="my-org">my-org</option>
+        </select>
+        
+        <!-- Repository Filter Dropdown (populated dynamically) -->
+        <select id="repo-filter" class="filter-select" onchange="handleRepoFilter()">
+          <option value="all">All Repositories</option>
+        </select>
+
+        <!-- Global Text Search Box -->
+        <div class="search-box">
+          <i data-feather="search" style="color: var(--text-secondary); width: 18px; height: 18px;"></i>
+          <input type="text" id="search-bar" class="search-input" placeholder="Search jobs, repos, PRs..." oninput="handleSearch()">
+        </div>
       </div>
     </header>
 
@@ -197,6 +213,8 @@
 
     let currentFilter = 'all';
     let searchQuery = '';
+    let selectedOrg = 'all';
+    let selectedRepo = 'all';
 
     // Initialize counts on page load
     function updateCounts() {
@@ -205,6 +223,27 @@
       document.getElementById('count-failed').innerText = mockJobs.filter(j => j.status === 'failed').length;
       document.getElementById('count-review').innerText = mockJobs.filter(j => j.status === 'review').length;
       document.getElementById('count-done').innerText = mockJobs.filter(j => j.status === 'done').length;
+    }
+
+    // Populate repository filter based on organization selection
+    function populateRepoFilter() {
+      const repoSelect = document.getElementById('repo-filter');
+      repoSelect.innerHTML = '<option value="all">All Repositories</option>';
+      
+      let filteredRepos = [];
+      if (selectedOrg === 'all') {
+        filteredRepos = [...new Set(mockJobs.map(j => j.repo))];
+      } else {
+        filteredRepos = [...new Set(mockJobs.filter(j => j.repo.startsWith(selectedOrg + '/')).map(j => j.repo))];
+      }
+
+      filteredRepos.forEach(repo => {
+        const opt = document.createElement('option');
+        opt.value = repo;
+        opt.innerText = repo.split('/')[1] || repo; // Display only name part
+        repoSelect.appendChild(opt);
+      });
+      selectedRepo = 'all';
     }
 
     // Return the status text for visual badges
@@ -225,10 +264,23 @@
       tbody.innerHTML = '';
 
       let filtered = mockJobs;
+
+      // Apply organization filter
+      if (selectedOrg !== 'all') {
+        filtered = filtered.filter(j => j.repo.startsWith(selectedOrg + '/'));
+      }
+
+      // Apply repository filter
+      if (selectedRepo !== 'all') {
+        filtered = filtered.filter(j => j.repo === selectedRepo);
+      }
+
+      // Apply status filter
       if (currentFilter !== 'all') {
         filtered = filtered.filter(j => j.status === currentFilter);
       }
 
+      // Apply text search query
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         filtered = filtered.filter(j => 
@@ -331,6 +383,18 @@
       renderTable();
     }
 
+    // Handle dropdown filter switches
+    function handleOrgFilter() {
+      selectedOrg = document.getElementById('org-filter').value;
+      populateRepoFilter();
+      renderTable();
+    }
+
+    function handleRepoFilter() {
+      selectedRepo = document.getElementById('repo-filter').value;
+      renderTable();
+    }
+
     // Handle search query updates
     function handleSearch() {
       searchQuery = document.getElementById('search-bar').value;
@@ -339,6 +403,7 @@
 
     // Page Load Setup
     window.onload = () => {
+      populateRepoFilter();
       updateCounts();
       renderTable();
       feather.replace();
