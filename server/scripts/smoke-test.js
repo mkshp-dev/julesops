@@ -43,7 +43,12 @@ async function main() {
   await assertOk('health', await request('GET', '/health'), 200);
   await assertOk('metrics', await request('GET', '/metrics'), 200);
   await assertOk('jobs', await request('GET', '/api/jobs'), 200);
+  await assertOk('repositories', await request('GET', '/api/repositories'), 200);
+  await assertOk('organizations', await request('GET', '/api/organizations'), 200);
+  await assertOk('events', await request('GET', '/api/events'), 200);
+  await assertOk('stats', await request('GET', '/api/stats'), 200);
 
+  const deliveryId = crypto.randomUUID();
   const payload = {
     action: 'opened',
     repository: { full_name: 'mkshp-dev/julesops' },
@@ -56,14 +61,39 @@ async function main() {
 
   await assertOk('webhook', await request('POST', '/api/webhooks', payload, {
     'x-github-event': 'issues',
-    'x-github-delivery': crypto.randomUUID(),
+    'x-github-delivery': deliveryId,
     ...signature(payload),
   }), 202);
+
+  // Idempotency — same delivery ID should be accepted silently (not error)
+  const dup = await request('POST', '/api/webhooks', payload, {
+    'x-github-event': 'issues',
+    'x-github-delivery': deliveryId,
+    ...signature(payload),
+  });
+  await assertOk('webhook-duplicate', dup, 202);
+  if (!dup.body.includes('duplicate delivery ignored')) {
+    throw new Error('duplicate delivery was not flagged correctly');
+  }
 
   const jobs = await request('GET', '/api/jobs?repository=mkshp-dev/julesops');
   await assertOk('jobs-after-webhook', jobs, 200);
   if (!jobs.body.includes('Smoke test issue')) {
     throw new Error('jobs endpoint did not include ingested smoke test issue');
+  }
+
+  // Get the job ID from the list and test /api/jobs/:id
+  const jobsData = JSON.parse(jobs.body);
+  const smokeJob = jobsData.jobs.find(j => j.issue_title === 'Smoke test issue' || j.issueTitle === 'Smoke test issue');
+  if (smokeJob && smokeJob.id) {
+    const jobDetail = await request('GET', `/api/jobs/${smokeJob.id}`);
+    await assertOk('job-detail', jobDetail, 200);
+    console.log('job-detail: job found with attempts array');
+  }
+
+  // Test /api/attempts with job_id
+  if (smokeJob && smokeJob.id) {
+    await assertOk('attempts', await request('GET', `/api/attempts?job_id=${smokeJob.id}`), 200);
   }
 }
 
