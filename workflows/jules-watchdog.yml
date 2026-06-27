@@ -57,6 +57,72 @@ jobs:
         if: steps.config.outputs.enabled != 'true'
         run: echo "JulesOps disabled for this repository."
 
+      - name: Detect and resolve mismatched in-progress issues with open PRs
+        if: steps.config.outputs.enabled == 'true'
+        shell: bash
+        env:
+          QUEUE_LABEL: ${{ steps.config.outputs.queue_label }}
+          STATUS_IN_PROGRESS: ${{ steps.config.outputs.status_in_progress }}
+          STATUS_REVIEW: ${{ steps.config.outputs.status_review }}
+        run: |
+          set -euo pipefail
+
+          # Fetch all open pull requests and Jules in-progress issues
+          gh pr list --repo "${{ github.repository }}" --state open --json number,body > /tmp/open_prs.json
+          gh issue list --repo "${{ github.repository }}" --state open --label "$QUEUE_LABEL" --label "$STATUS_IN_PROGRESS" --json number > /tmp/in_progress_issues.json
+
+          python3 - <<'PY'
+          import json, os, re, subprocess
+
+          with open('/tmp/open_prs.json', 'r', encoding='utf-8') as f:
+              prs = json.load(f)
+
+          with open('/tmp/in_progress_issues.json', 'r', encoding='utf-8') as f:
+              issues = json.load(f)
+
+          in_progress_numbers = {issue['number'] for issue in issues}
+          if not in_progress_numbers:
+              print("No in-progress issues found.")
+              exit(0)
+
+          # Regex to find closes/fixes references linking PR to issue
+          ref_re = re.compile(r'\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?) #([0-9]+)', re.IGNORECASE)
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          status_in_progress = os.environ['STATUS_IN_PROGRESS']
+          status_review = os.environ['STATUS_REVIEW']
+
+          for pr in prs:
+              body = pr.get('body') or ""
+              matches = ref_re.findall(body)
+              for match in matches:
+                  issue_num = int(match)
+                  if issue_num in in_progress_numbers:
+                      print(f"Mismatch detected: Issue #{issue_num} is in-progress, but PR #{pr['number']} is open.")
+                      
+                      # Move issue to review state
+                      subprocess.run([
+                          'gh', 'issue', 'edit', str(issue_num),
+                          '--repo', repo,
+                          '--remove-label', status_in_progress,
+                          '--add-label', status_review
+                      ], check=True)
+
+                      # Post a comment explaining the correction
+                      comment_body = (
+                          f"## JulesOps Watchdog\n\n"
+                          f"Watchdog detected that a linked pull request (#{pr['number']}) is already open, "
+                          f"but this issue was in **in-progress**. Automatically transitioning status to \`{status_review}\`."
+                      )
+                      subprocess.run([
+                          'gh', 'issue', 'comment', str(issue_num),
+                          '--repo', repo,
+                          '--body', comment_body
+                      ], check=True)
+
+                      in_progress_numbers.remove(issue_num)
+          PY
+
       - name: Comment on stale in-progress issues
         if: steps.config.outputs.enabled == 'true'
         shell: bash
