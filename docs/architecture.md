@@ -437,3 +437,50 @@ Webhook notifications send a POST request with the following JSON structure:
   "timestamp": "2026-06-27T10:45:00Z"
 }
 ```
+
+---
+
+# 12. Organization Membership & Authorization Model (Phase 5)
+
+To support secure multi-tenant usage across enterprises and teams, the JulesOps hosted dashboard implements Role-Based Access Control (RBAC) synchronized directly with GitHub organization memberships.
+
+## 12.1 Authentication & User Mapping
+- **OAuth Integration**: Users authenticate to the dashboard via GitHub OAuth.
+- **Organization Synchronization**: Upon login, the dashboard queries the GitHub API (`GET /user/orgs`) to cache the organizations and repositories the user is associated with.
+
+## 12.2 Role-Based Access Control (RBAC)
+
+The dashboard enforces four authorization levels:
+
+| Role | Permissions | GitHub Equivalent |
+| --- | --- | --- |
+| **Owner** | Full dashboard control. Manage billing, change notification endpoints, edit team membership rules. | Org Owner |
+| **Admin** | Link/unlink repositories, update `.github/julesops.yml` configurations, force global retry of failed jobs. | Repo Admin / Org Admin |
+| **Member** | View jobs and logs, trigger task retries, requeue issues. | Repo Write / Collaborator |
+| **Viewer** | Read-only access to dashboards, logs, and telemetry. Cannot trigger or alter jobs. | Repo Read / Org Member |
+
+## 12.3 Database Schema Additions
+
+To persist memberships and roles, the database schema is extended with the following tables:
+
+```sql
+-- Track registered dashboard users
+CREATE TABLE users (
+    id BIGINT PRIMARY KEY, -- Matches GitHub User ID
+    login VARCHAR(255) NOT NULL, -- GitHub username
+    email VARCHAR(255),
+    avatar_url VARCHAR(512),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Track organization membership mappings
+CREATE TABLE memberships (
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    installation_id BIGINT REFERENCES installations(id) ON DELETE CASCADE,
+    role VARCHAR(50) NOT NULL CHECK (role IN ('owner', 'admin', 'member', 'viewer')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, installation_id)
+);
+```
