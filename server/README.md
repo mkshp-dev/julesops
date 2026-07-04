@@ -33,6 +33,13 @@ The JulesOps hosted control-plane backend. Supports both a local JSON-file demo 
 - `POST /billing/webhook` — handle Stripe events
 - `GET /billing/portal` — redirect to Stripe Customer Portal
 
+### Admin
+- `GET /admin/installations/:installation_id` — installation overview, repositories, jobs, and failed events
+- `GET /admin/installations/:installation_id/repositories` — repository inspection
+- `GET /admin/installations/:installation_id/jobs` — job inspection with filters
+- `GET /admin/events?installation_id=...` — failed event listing
+- `POST /admin/events/:event_id/replay` — replay a failed event safely
+
 ## Run locally (demo mode)
 
 No database required — data is stored in `server/data/store.json`.
@@ -87,6 +94,12 @@ Key variables:
 | `SESSION_SECRET` | *(unset)* | Session signing secret |
 | `STRIPE_SECRET_KEY` | *(unset)* | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | *(unset)* | Stripe webhook signing secret |
+| `SENDGRID_API_KEY` | *(unset)* | SendGrid API key for alert email delivery |
+| `ALERT_EMAIL_FROM` | *(unset)* | Verified sender address for alert emails |
+| `ALERT_EMAIL_FROM_NAME` | `JulesOps` | Sender display name for alert emails |
+| `ALERT_EMAIL_REPLY_TO` | *(unset)* | Reply-to address for alert emails |
+| `SENDGRID_API_BASE_URL` | `https://api.sendgrid.com` | API base URL for SendGrid or a local test server |
+| `ALERT_EMAIL_DEMO_FALLBACK` | `true` in non-production | Keep demo logging enabled when email is not configured |
 
 ## Deployment
 

@@ -80,6 +80,33 @@ async function getUserInstallations(userId) {
   return rows.map(r => r.installation_id);
 }
 
+/**
+ * Get installation IDs the user can access at or above the required role.
+ * Returns null when running without Postgres so callers can treat demo mode
+ * as unrestricted.
+ *
+ * @param {string} userId
+ * @param {string} requiredRole
+ * @returns {Promise<number[]|null>}
+ */
+async function getAccessibleInstallationIds(userId, requiredRole = 'viewer') {
+  const pool = db.getPool();
+  if (!pool) return null;
+
+  const rows = await db.query(
+    `SELECT m.installation_id, m.role
+       FROM memberships m
+       JOIN installations i ON i.id = m.installation_id
+      WHERE m.user_id = $1
+        AND i.suspended = FALSE`,
+    [userId],
+  );
+
+  return rows
+    .filter((row) => roleAtLeast(row.role, requiredRole))
+    .map((row) => row.installation_id);
+}
+
 // ─── HTTP middleware helpers ───────────────────────────────────────────────────
 
 /**
@@ -186,6 +213,7 @@ module.exports = {
   requireRole,
   getUserRole,
   getUserInstallations,
+  getAccessibleInstallationIds,
   filterJobsByAuthorization,
   roleAtLeast,
 };

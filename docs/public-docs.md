@@ -167,16 +167,7 @@ See `SECURITY.md` for vulnerability reporting.
 
 ---
 
-## 7. Planned Hosted Control Plane
+## 7. Future Hosted Control Plane
 
-The following features are planned/designed, not currently shipped as production backend code in this repository:
-
-- multi-repo dashboard
-- job and attempt history
-- email and webhook notifications
-- RBAC/team roles
-- Stripe billing
-- admin webhook replay tools
-- hosted health and metrics endpoints
-
+Future hosted-control-plane work is tracked in GitHub issues instead of roadmap docs.
 The dashboard under `dashboard/` is currently a prototype using mock data.

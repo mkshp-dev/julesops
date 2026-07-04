@@ -26,7 +26,7 @@ function Assert-ContainsText {
 function New-FixtureCopy {
   $target = Join-Path $env:TEMP ("julesops-fixture-" + [guid]::NewGuid().ToString("N"))
   New-Item -ItemType Directory -Force -Path $target | Out-Null
-  Copy-Item -LiteralPath (Join-Path $fixtureRoot "*") -Destination $target -Recurse -Force
+  Copy-Item -Path (Join-Path $fixtureRoot "*") -Destination $target -Recurse -Force
   git -C $target init | Out-Null
   git -C $target checkout -b main | Out-Null
   git -C $target add . | Out-Null

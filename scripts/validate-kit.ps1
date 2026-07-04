@@ -196,7 +196,14 @@ function Validate-JulesOpsConfig {
     }
     
     # Check GitHub labels if gh CLI is available & authenticated
-    $remoteUrl = (git -C $RepoRoot remote get-url origin 2>$null)
+    $remoteUrl = $null
+    try {
+      $oldEAP = $ErrorActionPreference
+      $ErrorActionPreference = 'Continue'
+      $remoteUrl = git -C $RepoRoot remote get-url origin 2>$null
+    } catch {} finally {
+      $ErrorActionPreference = $oldEAP
+    }
     if ($remoteUrl -and ($remoteUrl -match 'github\.com[:/]([^/]+/[^/]+?)(?:\.git)?\s*$')) {
       $repoName = $Matches[1]
       $authCheck = $false
@@ -253,8 +260,11 @@ $kitFiles = @(
   "workflows/jules-watchdog.yml",
   "examples/aggregator/julesops.yml",
   "examples/aggregator/jules-repo.md",
-  "scripts/bootstrap-labels.ps1",`r`n  "scripts/test-fixture.ps1",
-  "examples/fixture-basic/README.md",`r`n  "examples/fixture-basic/repo/README.md",`r`n  "examples/fixture-basic/repo/src/app.txt"
+  "scripts/bootstrap-labels.ps1",
+  "scripts/test-fixture.ps1",
+  "examples/fixture-basic/README.md",
+  "examples/fixture-basic/repo/README.md",
+  "examples/fixture-basic/repo/src/app.txt"
 )
 
 foreach ($file in $kitFiles) {

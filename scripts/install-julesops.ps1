@@ -11,10 +11,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$KitVersion = "v0.3.0"
-
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $kitRoot = Split-Path -Parent $scriptRoot
+$KitVersion = (Get-Content -LiteralPath (Join-Path $scriptRoot "kit-version.txt") -Raw).Trim()
 $targetRoot = [System.IO.Path]::GetFullPath($TargetRepo)
 
 $files = @(
@@ -72,16 +71,17 @@ foreach ($file in $files) {
 
   if ($shouldCopy -and -not $DryRun) {
     New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
-    
+
     $content = Get-Content -LiteralPath $source -Raw
     $ext = [System.IO.Path]::GetExtension($target)
     $marker = ""
+
     if ($ext -eq ".md") {
       $marker = "<!-- JulesOps kit version: $KitVersion -->`r`n"
     } elseif ($ext -eq ".yml" -or $ext -eq ".yaml" -or $ext -eq ".py") {
       $marker = "# JulesOps kit version: $KitVersion`r`n"
     }
-    
+
     Set-Content -LiteralPath $target -Value ($marker + $content) -NoNewline
   }
 }

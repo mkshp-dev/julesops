@@ -22,6 +22,10 @@ jobs:
       - name: Run fixture smoke test
         shell: pwsh
         run: .\scripts\test-fixture.ps1
+
+      - name: Run retry command parser tests
+        shell: bash
+        run: node scripts/__tests__/comment-command.test.js
   validate-server:
     name: Validate hosted server skeleton
     runs-on: windows-latest

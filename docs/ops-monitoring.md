@@ -1,6 +1,6 @@
 # JulesOps Operational Monitoring & Admin Tools
 
-This document describes operational monitoring for the hosted App and dashboard. A minimal runnable backend skeleton now exists in `server/`; health, metrics, webhook ingestion, and read-only dashboard data endpoints are implemented there. Admin APIs, durable database storage, billing, and production alerting remain planned.
+This document describes operational monitoring for the hosted App and dashboard. A minimal runnable backend skeleton now exists in `server/`; health, metrics, webhook ingestion, read-only dashboard data endpoints, SendGrid-backed email alert delivery, and the first admin inspection/replay APIs are implemented there. Durable database storage, billing, and broader production alerting remain planned.
 
 ---
 
@@ -30,7 +30,7 @@ The current server skeleton exports initial Prometheus-compatible metrics at `/m
 | `julesops_db_query_duration_seconds` | Histogram of DB query latency |
 
 ### 1.3 Alerting Rules
-The following conditions should trigger operator PagerDuty/Slack alerts:
+The following conditions should trigger operator PagerDuty/Slack alerts. Email delivery uses SendGrid via `SENDGRID_API_KEY` and `ALERT_EMAIL_FROM` when configured; demo mode can still fall back to console logging:
 
 | Condition | Severity | Action |
 | --- | --- | --- |
@@ -44,7 +44,7 @@ The following conditions should trigger operator PagerDuty/Slack alerts:
 ## 2. Admin Tools
 
 ### 2.1 Installation Inspection
-The future admin API should allow operators to inspect installations:
+The admin API exposes installation inspection endpoints:
 
 ```bash
 # View installation details
@@ -58,7 +58,7 @@ GET /admin/installations/{installation_id}/jobs?status=in-progress
 ```
 
 ### 2.2 Failed Webhook Replay
-When a webhook handler fails (e.g. DB timeout), the raw payload is stored in the `events` table for replay. Planned admin tools should allow replaying failed events:
+When a webhook handler fails (e.g. DB timeout), the raw payload is stored in the `events` table for replay. The admin API supports replaying failed events after authorization:
 
 ```bash
 # List failed events in last 24 hours
@@ -92,8 +92,11 @@ GET /admin/support/lookup?org=mkshp-dev
 ```
 
 ### 3.2 Audit Log Access
-Full event audit trails should be accessible for compliance queries:
+The admin action audit trail is persisted for compliance queries:
 
 ```bash
-GET /admin/events?repository_id=123&event_type=pr_merged&limit=50
+GET /admin/actions?installation_id=123&limit=50
 ```
+
+
+

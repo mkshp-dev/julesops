@@ -22,6 +22,7 @@ const https = require('https');
 const crypto = require('crypto');
 
 const db = require('./db');
+const store = require('./store');
 const {
   createSession,
   destroySession,
@@ -97,6 +98,55 @@ function githubGet(path, token) {
     req.on('error', reject);
     req.end();
   });
+}
+
+async function syncMembershipsFromGitHub(userId, accessToken) {
+  const pool = db.getPool();
+  if (!pool) {
+    return [];
+  }
+
+  const { status, data } = await githubGet('/user/memberships/orgs', accessToken);
+  if (status !== 200 || !Array.isArray(data)) {
+    throw new Error(`Failed to load GitHub organization memberships: HTTP ${status}`);
+  }
+
+  const activeMemberships = data
+    .filter((entry) => entry.state === 'active' && entry.organization && entry.organization.login)
+    .map((entry) => ({
+      orgLogin: entry.organization.login,
+      role: entry.role || 'member',
+    }));
+
+  if (activeMemberships.length === 0) {
+    return [];
+  }
+
+  const orgLogins = activeMemberships.map((entry) => entry.orgLogin);
+  const installations = await db.query(
+    `SELECT id, account_login FROM installations WHERE account_login = ANY($1)`,
+    [orgLogins],
+  );
+
+  const installationByOrg = new Map(installations.map((row) => [row.account_login, row.id]));
+  const synced = [];
+
+  for (const membership of activeMemberships) {
+    const installationId = installationByOrg.get(membership.orgLogin);
+    if (!installationId) continue;
+
+    const appRole = membership.role === 'admin' ? 'admin' : membership.role === 'owner' ? 'owner' : 'member';
+    await db.query(
+      `INSERT INTO memberships (user_id, installation_id, role, updated_at)
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (user_id, installation_id)
+       DO UPDATE SET role = EXCLUDED.role, updated_at = NOW()`,
+      [userId, installationId, appRole],
+    );
+    synced.push({ installationId, role: appRole, orgLogin: membership.orgLogin });
+  }
+
+  return synced;
 }
 
 // ─── User persistence ─────────────────────────────────────────────────────────
@@ -237,13 +287,24 @@ async function handleOAuthCallback(req, res) {
   }
 
   // Persist user
-  await upsertUser({
+  const persistedUser = await upsertUser({
     githubId: githubUser.id,
     login: githubUser.login,
     name: githubUser.name,
     email: githubUser.email,
     avatarUrl: githubUser.avatar_url,
   });
+
+  if (persistedUser) {
+    try {
+      const memberships = await syncMembershipsFromGitHub(persistedUser.id, accessToken);
+      if (memberships.length > 0) {
+        console.log(`[oauth] Synced ${memberships.length} organization membership(s) for ${githubUser.login}`);
+      }
+    } catch (err) {
+      console.warn('[oauth] Membership sync skipped:', err.message);
+    }
+  }
 
   // Create session
   const sessionId = createSession({
@@ -283,4 +344,5 @@ module.exports = {
   handleOAuthCallback,
   handleLogout,
   upsertUser,
+  syncMembershipsFromGitHub,
 };

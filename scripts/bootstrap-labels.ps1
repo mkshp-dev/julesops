@@ -88,7 +88,14 @@ function Write-Checklist {
   }
 }
 
-$remoteUrl = (git -C $targetRoot remote get-url origin 2>$null)
+$remoteUrl = $null
+try {
+  $oldEAP = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  $remoteUrl = git -C $targetRoot remote get-url origin 2>$null
+} catch {} finally {
+  $ErrorActionPreference = $oldEAP
+}
 $repoName = $null
 if ($remoteUrl -and ($remoteUrl -match 'github\.com[:/]([^/]+/[^/]+?)(?:\.git)?\s*$')) {
   $repoName = $Matches[1]

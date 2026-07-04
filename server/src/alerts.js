@@ -55,13 +55,13 @@ async function loadRulesAndDestinations() {
 }
 
 async function recordDelivery(ruleId, destinationId, jobId, status, errorMessage) {
-  const pool = db.getPool();
-  if (!pool) return;
-  await db.query(
-    `INSERT INTO alert_deliveries (rule_id, destination_id, job_id, status, error_message)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [ruleId, destinationId, jobId || null, status, errorMessage || null],
-  );
+  await store.recordAlertDelivery({
+    ruleId,
+    destinationId,
+    jobId: jobId || null,
+    status,
+    errorMessage: errorMessage || null,
+  });
 }
 
 // ─── Alert detectors ──────────────────────────────────────────────────────────
@@ -227,6 +227,7 @@ async function runAlerts() {
   }
 
   console.log(`[alerts] Cycle complete. Rules checked: ${checked}, alerts fired: ${fired}, errors: ${errors}`);
+  recordAlertCycle({ fired, errors });
   return { checked, fired, errors };
 }
 
@@ -264,3 +265,5 @@ function stopAlertWorker() {
 }
 
 module.exports = { runAlerts, startAlertWorker, stopAlertWorker, buildAlert };
+
+

@@ -1,6 +1,6 @@
 # Release checklist
 
-This checklist is for the free JulesOps workflow kit public beta. It is separate from future GitHub Marketplace readiness for the hosted App, dashboard, billing, and multi-repo control plane.
+This checklist is for the free JulesOps workflow kit public beta. The remaining Marketplace and control-plane work is tracked in GitHub issues instead of roadmap prose.
 
 ## Free Core Public Beta
 
@@ -68,17 +68,10 @@ Any matches should be historical context only, not current config examples.
 
 ### 8. Version Audit
 
-- Update `$KitVersion` in `scripts/install-julesops.ps1`.
-- Update `CHANGELOG.md`.
+```powershell
+.\scripts\release-kit.ps1 -Version v0.3.1 -Date 2026-07-04
+```
+
+- Update the version file at `scripts/kit-version.txt`.
+- Review the generated `CHANGELOG.md` entry before tagging.
 - Verify `git tag --list` contains the intended tag after release.
-
-## Marketplace Readiness
-
-Do not treat the project as Marketplace-ready until these hosted-service items exist and are verified:
-
-- [x] GitHub App registration and install flow (verified locally via mocks; see [private-beta.md](./private-beta.md#31-completed-infrastructure-as-of-2026-06-27))
-- [x] runnable backend with webhook signature verification (see [server/src/server.js](../server/src/server.js) and [server/src/store.js](../server/src/store.js))
-- [x] hosted dashboard connected to real data (see [dashboard/index.html](../dashboard/index.html))
-- [x] billing integration (see [server/src/billing.js](../server/src/billing.js))
-- [x] privacy policy and terms finalized for hosted service ([PRIVACY.md](../PRIVACY.md) and [TERMS.md](../TERMS.md))
-- [x] support runbook and operational monitoring (see [docs/deployment.md](./deployment.md) and [server/src/alerts.js](../server/src/alerts.js))

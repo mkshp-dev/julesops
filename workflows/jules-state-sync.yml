@@ -284,15 +284,13 @@ jobs:
           COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
           set -euo pipefail
+          # Treat the comment body as data. The parser rejects punctuation or extra text.
+          COMMAND="$(printf '%s' "$COMMENT_BODY" | node scripts/comment-command.js || true)"
 
-          # Treat the comment body as data. Do not interpolate github.event.comment.body directly into shell.
-          BODY_LOWER="$(printf '%s' "$COMMENT_BODY" | tr '[:upper:]' '[:lower:]' | xargs)"
-
-          if [[ "$BODY_LOWER" != "/jules retry" && "$BODY_LOWER" != "/jules requeue" ]]; then
+          if [[ -z "$COMMAND" ]]; then
             echo "Not a recognized retry command. Skipping."
             exit 0
           fi
-
           # Verify commenter is a maintainer (has OWNER, MEMBER, or COLLABORATOR role)
           if [[ "$AUTHOR_ASSOC" != "OWNER" && "$AUTHOR_ASSOC" != "MEMBER" && "$AUTHOR_ASSOC" != "COLLABORATOR" ]]; then
             echo "Unauthorized user @$COMMENTER attempted to retry issue."

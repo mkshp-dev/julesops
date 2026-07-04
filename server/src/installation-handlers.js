@@ -14,8 +14,9 @@
  */
 
 const db = require('./db');
+const store = require('./store');
 
-// ─── Postgres-specific upserts (fall through to JSON-file no-ops if no pool) ─
+// ─── Postgres-specific upserts (fall through to JSON-file helpers if no pool) ─
 
 /**
  * Upsert an installation record in Postgres.
@@ -26,11 +27,11 @@ const db = require('./db');
 async function upsertInstallation(installation, suspended = false) {
   const pool = db.getPool();
   if (!pool) {
-    // JSON-file mode: no installations table — log and continue
+    const record = store.upsertInstallationRecord(installation, suspended);
     console.log(
-      `[installation] JSON-file mode: skipping DB upsert for installation ${installation.id}`,
+      `[installation] JSON-file mode: stored installation ${installation.id} (${record.account_login || 'unknown'})`,
     );
-    return;
+    return record;
   }
 
   await db.query(
@@ -66,7 +67,13 @@ async function upsertInstallation(installation, suspended = false) {
  */
 async function removeOrSuspendInstallation(installationId, suspend = false) {
   const pool = db.getPool();
-  if (!pool) return;
+  if (!pool) {
+    store.removeOrSuspendInstallationRecord(installationId, suspend);
+    console.log(
+      `[installation] JSON-file mode: ${suspend ? 'suspended' : 'removed'} installation ${installationId}`,
+    );
+    return;
+  }
 
   if (suspend) {
     await db.query(
@@ -88,8 +95,9 @@ async function removeOrSuspendInstallation(installationId, suspend = false) {
 async function upsertRepository(repo, installationId) {
   const pool = db.getPool();
   if (!pool) {
-    console.log(`[installation] JSON-file mode: skipping DB upsert for repo ${repo.full_name}`);
-    return;
+    const record = store.upsertRepositoryRecord(repo, installationId);
+    console.log(`[installation] JSON-file mode: stored repo ${repo.full_name}`);
+    return record;
   }
 
   const [ownerLogin, repoName] = (repo.full_name || '').split('/');
@@ -117,7 +125,12 @@ async function upsertRepository(repo, installationId) {
  */
 async function deactivateRepository(repoId) {
   const pool = db.getPool();
-  if (!pool) return;
+  if (!pool) {
+    store.deactivateRepositoryRecord(repoId);
+    console.log(`[installation] JSON-file mode: deactivated repo ${repoId}`);
+    return;
+  }
+
   await db.query(
     `UPDATE repositories SET is_active = FALSE, updated_at = NOW() WHERE id = $1`,
     [repoId],

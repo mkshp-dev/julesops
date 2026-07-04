@@ -48,7 +48,7 @@ The long-term product goal is to make JulesOps available through GitHub Marketpl
    - multi-repo management and reporting
    - hosted setup / upgrade management
 
-See [docs/marketplace-roadmap.md](docs/marketplace-roadmap.md) for the open-core boundary, [docs/development-to-marketplace-release.md](docs/development-to-marketplace-release.md) for the release plan. Use [docs/release-checklist.md](docs/release-checklist.md) before tagging workflow-kit releases. See [docs/marketplace-execution-roadmap.md](docs/marketplace-execution-roadmap.md) for the remaining path to a full Marketplace product.
+See the GitHub issue tracker for the remaining Marketplace and control-plane work. Use [docs/release-checklist.md](docs/release-checklist.md) before tagging workflow-kit releases.
 
 ## Repository layout
 
@@ -57,9 +57,7 @@ julesops/
 ├─ README.md
 ├─ docs/
 │  ├─ architecture.md
-│  ├─ marketplace-execution-roadmap.md
 │  ├─ install.md
-│  ├─ marketplace-roadmap.md
 │  ├─ product.md
 │  ├─ repo-config-spec.md
 │  └─ state-machine.md

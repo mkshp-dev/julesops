@@ -9,6 +9,7 @@
  */
 
 const DB_URL = process.env.DATABASE_URL || '';
+const { recordDbQuery } = require('./metrics');
 
 /** @type {import('pg').Pool | null} */
 let pool = null;
@@ -71,6 +72,7 @@ async function query(text, params) {
   const start = Date.now();
   const result = await p.query(text, params);
   const duration = Date.now() - start;
+  recordDbQuery(duration);
   if (process.env.PG_LOG_QUERIES === 'true') {
     console.log('[db] query', { text, duration, rows: result.rowCount });
   }
@@ -146,3 +148,4 @@ async function close() {
 }
 
 module.exports = { getPool, query, queryOne, withTransaction, isHealthy, close };
+
