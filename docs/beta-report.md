@@ -1,6 +1,6 @@
 # JulesOps External Beta Report
 
-**Date**: 2026-07-07
+**Date**: 2026-07-08
 **Kit version**: v0.3.0
 **Conducted by**: automated validation pass (issue #66)
 
@@ -15,12 +15,13 @@
 | 3 | `mkshp-dev/pomoTomato` | Private | `main` | Yes (partial, pre-v0.3.0) |
 | 4 | `mkshp-dev/poker-anki` | Private | `main` | No |
 | 5 | `mkshp-dev/Aggregator` | Private | `Dev` | Yes (active, pre-v0.3.0) |
+| 6 | `mkshp-dev/obsidian-sql-plugin` | Public | `Dev` | No |
 
 ---
 
 ## 2. Installation outcomes
 
-### 2.1 Fresh installs (plugin-template, poker-anki)
+### 2.1 Fresh installs (plugin-template, poker-anki, obsidian-sql-plugin)
 
 | Step | Result |
 |---|---|
@@ -30,6 +31,16 @@
 | Kit version marker | Embedded in all installed files |
 
 No friction observed. The installer worked on first attempt without errors.
+
+**obsidian-sql-plugin** additionally exercises the non-`main` default branch (`Dev`) and confirms the integrated label bootstrap. Notable observations:
+
+| Step | Result |
+|---|---|
+| `install-julesops.ps1 -BaseBranch Dev -DryRun` | ✅ Success — 7 files previewed, labels skipped with clear note |
+| `install-julesops.ps1 -BaseBranch Dev` | ✅ Success — files written + 7 labels created on GitHub in one step |
+| Duplicate install (no flags) | ❌ Blocked — `Target file already exists` (expected, clear message) |
+| `install-julesops.ps1 -BaseBranch Dev -Upgrade` | ✅ Success — `julesops.yml` and `jules-repo.md` preserved; labels idempotent (all already existed) |
+| Pre-existing non-JulesOps files (`FUNDING.yml`, `deploy-docs.yml`) | ✅ Untouched |
 
 ### 2.2 Upgrade installs (MOC-plugin, pomoTomato)
 
@@ -56,9 +67,9 @@ Both repos had partial prior installs (`.github/ISSUE_TEMPLATE/jules-task.yml` a
 
 ### 3.2 Target repo validation
 
-All 4 repos passed **file-level and config-level validation** — all required files exist, config YAML parses correctly, base branch exists locally.
+The original 4 repos passed **file-level and config-level validation** but failed remote label validation (labels not yet bootstrapped at the time).
 
-All 4 repos **failed remote label validation** — the JulesOps state labels (`status:todo`, `status:in-progress`, etc.) do not yet exist on the GitHub remotes. This is expected for a local-only beta install; labels must be created via `bootstrap-labels.ps1` before workflows can run.
+`obsidian-sql-plugin` passes **all validation checks** including remote label validation — labels were created by the integrated bootstrap during install.
 
 | Repo | Files OK | Config OK | Branch OK | Labels OK |
 |---|---|---|---|---|
@@ -66,10 +77,11 @@ All 4 repos **failed remote label validation** — the JulesOps state labels (`s
 | `obsidian-MOC-plugin` | ✅ | ✅ | ✅ | ❌ (partial — `status:failed` missing) |
 | `pomoTomato` | ✅ | ✅ | ✅ | ❌ (partial — `status:failed` missing) |
 | `poker-anki` | ✅ | ✅ | ✅ | ❌ (not yet bootstrapped) |
+| `obsidian-sql-plugin` | ✅ | ✅ | ✅ | ✅ (bootstrapped by installer) |
 
-### 3.3 Label bootstrap dry-run
+### 3.3 Label bootstrap
 
-`bootstrap-labels.ps1 -DryRun` ran successfully for all 4 repos, printing the expected 7 labels per repo with correct names, colors, and descriptions. No errors.
+`bootstrap-labels.ps1 -DryRun` ran successfully for the original 4 repos. For `obsidian-sql-plugin`, label creation ran live as part of the installer — all 7 labels created on first install, idempotent on upgrade (all reported as already existing).
 
 ---
 
@@ -77,14 +89,15 @@ All 4 repos **failed remote label validation** — the JulesOps state labels (`s
 
 The Python config resolver (`resolve-config.py`) was tested in each repo:
 
-| Repo | Resolver result | All 18 fields resolved? |
+| Repo | Resolver result | All 17 fields resolved? |
 |---|---|---|
-| `obsidian-plugin-template` | ✅ Success | ✅ 18/18 |
-| `obsidian-MOC-plugin` | ✅ Success | ✅ 18/18 |
-| `pomoTomato` | ✅ Success | ✅ 18/18 |
-| `poker-anki` | ✅ Success | ✅ 18/18 |
+| `obsidian-plugin-template` | ✅ Success | ✅ 17/17 |
+| `obsidian-MOC-plugin` | ✅ Success | ✅ 17/17 |
+| `pomoTomato` | ✅ Success | ✅ 17/17 |
+| `poker-anki` | ✅ Success | ✅ 17/17 |
+| `obsidian-sql-plugin` | ✅ Success | ✅ 17/17 |
 
-The resolver uses only Python stdlib — no PyYAML or network packages required. Portability confirmed across all test repos.
+The resolver uses only Python stdlib — no PyYAML or network packages required. Portability confirmed across all test repos. *(Note: previous report stated 18 fields; actual output is 17. Count corrected.)*
 
 ---
 
@@ -93,6 +106,9 @@ The resolver uses only Python stdlib — no PyYAML or network packages required.
 ### What worked well
 
 - **Installer portability**: The installer worked identically across public and private repos, and across repos with and without prior JulesOps files.
+- **Non-`main` default branch**: `obsidian-sql-plugin` uses `Dev` as its default branch; `base_branch: Dev` was written and validated correctly.
+- **Integrated label bootstrap**: Labels now created in a single installer run — no separate step needed. Upgrade runs are idempotent (existing labels skipped).
+- **Coexistence with existing workflows**: Pre-existing `.github` files (`FUNDING.yml`, `deploy-docs.yml`) were not touched by the installer.
 - **Upgrade path**: The `-Upgrade` flag correctly preserves `julesops.yml` and `jules-repo.md` while refreshing all other managed files.
 - **Config resolver**: Pure-stdlib Python parser worked in all repos without dependencies.
 - **Validation tooling**: `validate-kit.ps1` catches real issues (missing labels) with clear error messages.
@@ -113,7 +129,8 @@ All config fields parsed identically across repos. The resolver defaults are sen
 
 | Criterion | Status |
 |---|---|
-| 3–5 external repos installed | ✅ 4 new + 1 existing = 5 total |
+| 3–5 external repos installed | ✅ 5 new + 1 existing = 6 total |
 | Beta feedback collected | ✅ See §5 above |
-| Config contract validated | ✅ 18/18 fields resolve correctly |
+| Config contract validated | ✅ 17/17 fields resolve correctly |
 | Breaking changes | None identified |
+| Integrated label bootstrap validated | ✅ `obsidian-sql-plugin` — labels created + idempotent upgrade confirmed |

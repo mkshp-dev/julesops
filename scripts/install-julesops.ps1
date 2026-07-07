@@ -152,9 +152,13 @@ if ($SkipLabels) {
 } else {
   $bootstrapScript = Join-Path $scriptRoot "bootstrap-labels.ps1"
   if (Test-Path -LiteralPath $bootstrapScript) {
-    Write-Host ""
-    Write-Host "--- Bootstrapping GitHub labels ---"
-    & $bootstrapScript -TargetRepo $TargetRepo $(if ($DryRun) { "-DryRun" })
+    if ($DryRun) {
+      Write-Host "[DryRun] Would bootstrap GitHub labels via bootstrap-labels.ps1 (skipped in dry-run — config not written yet)."
+    } else {
+      Write-Host ""
+      Write-Host "--- Bootstrapping GitHub labels ---"
+      & $bootstrapScript -TargetRepo $TargetRepo
+    }
   } else {
     Write-Host "Warning: bootstrap-labels.ps1 not found at $bootstrapScript. Create labels manually."
   }
