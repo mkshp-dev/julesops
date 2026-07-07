@@ -1,10 +1,19 @@
 # JulesOps repository config spec
 
-This document defines the first-pass config contract for repositories adopting JulesOps.
+This document defines the config contract for repositories adopting JulesOps.
 
 Config file location:
 
 - `.github/julesops.yml`
+
+---
+
+## Stability definitions
+
+| Badge | Meaning |
+|---|---|
+| **Stable** | This field is part of the v1 contract. It is consumed by shipping workflows, has been validated across multiple external repositories, and will not change shape or semantics without a major version bump. |
+| **Experimental** | This field is declared in the spec but is not yet fully honored by the workflow kit. It may change shape, be renamed, or be removed before stabilization. Adopters should not depend on its exact behavior. |
 
 Top-level shape:
 
@@ -37,7 +46,7 @@ julesops:
 
 ---
 
-# 1. `enabled`
+# 1. `enabled` — **Stable**
 
 ```yaml
 enabled: true
@@ -49,7 +58,7 @@ If `false`, dispatch workflows should exit without selecting work.
 
 ---
 
-# 2. `repository.base_branch`
+# 2. `repository.base_branch` — **Stable**
 
 ```yaml
 repository:
@@ -70,7 +79,7 @@ This value is consumed by the dispatch workflow and should be included in the pr
 
 # 3. `queue`
 
-## `queue.queue_label`
+## `queue.queue_label` — **Stable**
 
 ```yaml
 queue:
@@ -79,7 +88,7 @@ queue:
 
 The label that marks issues as eligible for JulesOps queueing.
 
-## `queue.max_active_jobs`
+## `queue.max_active_jobs` — **Experimental**
 
 ```yaml
 queue:
@@ -97,7 +106,7 @@ That is acceptable for v1, but the eventual goal is for the workflow kit or futu
 
 ---
 
-# 4. `states`
+# 4. `states` — **Stable**
 
 ```yaml
 states:
@@ -123,7 +132,7 @@ The actual label names are configurable, but the workflows assume the semantic r
 
 ---
 
-# 5. `instructions`
+# 5. `instructions` — **Stable**
 
 ```yaml
 instructions:
@@ -133,17 +142,17 @@ instructions:
 
 Paths to the instruction files used to build the Jules prompt.
 
-## `instructions.core`
+## `instructions.core` — **Stable**
 Path to the generic JulesOps orchestration contract.
 
-## `instructions.repo`
+## `instructions.repo` — **Stable**
 Path to the adopting repository’s repo-specific implementation guidance.
 
 The repo-specific file is optional in principle, but strongly recommended in practice.
 
 ---
 
-# 6. `blocked_comment.marker`
+# 6. `blocked_comment.marker` — **Stable**
 
 ```yaml
 blocked_comment:
@@ -156,7 +165,7 @@ If an issue comment contains this marker while the issue is in progress, JulesOp
 
 ---
 
-# 7. `issue_completion.close_on_merge`
+# 7. `issue_completion.close_on_merge` — **Stable**
 
 ```yaml
 issue_completion:
@@ -169,7 +178,7 @@ If `false`, the workflow may still mark the issue `done` but leave the issue ope
 
 ---
 
-# 8. `watchdog`
+# 8. `watchdog` — **Stable**
 
 ```yaml
 watchdog:
@@ -188,7 +197,7 @@ How long an issue may remain in `review` without GitHub activity before the watc
 ### Current v1 behavior
 The watchdog is currently **comment-only**. It does not automatically requeue, relabel, or close issues.
 
-# 9. `pull_request`
+# 9. `pull_request` — **Stable**
 
 ```yaml
 pull_request:
@@ -198,7 +207,7 @@ pull_request:
 
 Configures validations applied when a pull request linked to a Jules issue is opened or reopened.
 
-## `pull_request.target_base_branch_only`
+## `pull_request.target_base_branch_only` — **Stable**
 
 Whether JulesOps should validate that a pull request linked to a Jules issue targets the repository's configured `repository.base_branch`.
 
@@ -207,7 +216,7 @@ If `true` and the pull request targets a different branch, JulesOps will:
 - Comment on the linked issue.
 - Mark the issue as `blocked` instead of moving it to the `review` state.
 
-## `pull_request.require_issue_link`
+## `pull_request.require_issue_link` — **Stable**
 
 Whether JulesOps should validate that a pull request linked to a Jules issue contains a valid closing reference to a tracked issue (e.g. `Closes #123` or `Fixes #123`).
 
@@ -217,11 +226,11 @@ If `true` and no valid link is present, JulesOps will:
 
 ---
 
-# 10. Future / likely additions
+# 10. Future / experimental additions
 
-The following fields are plausible extensions but are not yet standardized in the active spec:
+The following fields are plausible extensions but are **not yet part of the stable contract**. They are labeled **Experimental** and may change or be removed.
 
-## Retry policy
+## Retry policy — **Experimental**
 ```yaml
 retry:
   allow_requeue_from_failed: true
@@ -232,7 +241,7 @@ Potential future meaning:
 - whether maintainers can trigger a standardized retry path
 - whether comment-command retries should be enabled
 
-## Completion comment behavior
+## Completion comment behavior — **Experimental**
 ```yaml
 completion:
   require_issue_comment_summary: true
@@ -258,3 +267,38 @@ The first-pass workflows do not yet perform exhaustive schema validation. They a
 # 12. Reference example
 
 See `examples/aggregator/julesops.yml` for a concrete config example based on an Aggregator-style adopting repository.
+
+---
+
+# 13. v1 contract guarantee
+
+All fields marked **Stable** in this document are part of the v1 free-core config contract. They:
+
+- Are consumed by the shipping workflow kit (dispatch, state-sync, watchdog)
+- Have been validated across 5 external repositories in the beta pass (see `docs/beta-report.md`)
+- Will not change key names, nesting, or semantics without a major version bump
+- Have sensible defaults in `resolve-config.py` that allow the config to work with minimal customization
+
+Fields marked **Experimental** carry no such guarantee and adopters should expect possible changes.
+
+---
+
+# 14. Stability summary
+
+| Field path | Stability | Consumed by |
+|---|---|---|
+| `julesops.enabled` | **Stable** | dispatch |
+| `julesops.repository.base_branch` | **Stable** | dispatch, state-sync |
+| `julesops.queue.queue_label` | **Stable** | dispatch, state-sync, watchdog |
+| `julesops.queue.max_active_jobs` | **Experimental** | _(declared only; single-job enforcement)_ |
+| `julesops.states.*` (6 fields) | **Stable** | dispatch, state-sync, watchdog |
+| `julesops.instructions.core` | **Stable** | dispatch |
+| `julesops.instructions.repo` | **Stable** | dispatch |
+| `julesops.blocked_comment.marker` | **Stable** | state-sync |
+| `julesops.pull_request.target_base_branch_only` | **Stable** | state-sync |
+| `julesops.pull_request.require_issue_link` | **Stable** | state-sync |
+| `julesops.issue_completion.close_on_merge` | **Stable** | state-sync |
+| `julesops.watchdog.stale_in_progress_hours` | **Stable** | watchdog |
+| `julesops.watchdog.stale_review_hours` | **Stable** | watchdog |
+| `retry.*` | **Experimental** | _(not yet implemented)_ |
+| `completion.*` | **Experimental** | _(not yet implemented)_ |
