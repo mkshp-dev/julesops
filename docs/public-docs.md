@@ -51,13 +51,21 @@ The installer copies the following files into your repository:
 
 ### Bootstrap Labels
 
-Run this from the JulesOps source repository:
+Label bootstrapping runs automatically at the end of `install-julesops.ps1`. If `gh` CLI is authenticated and a GitHub remote is detected, the 7 JulesOps labels are created on GitHub in the same step.
+
+If you want to skip label creation during install (e.g. to run it separately later):
+
+```powershell
+.\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\your\repo" -BaseBranch main -SkipLabels
+```
+
+To run label bootstrapping manually at any time:
 
 ```powershell
 .\scripts\bootstrap-labels.ps1 -TargetRepo "C:\path\to\your\repo"
 ```
 
-If GitHub authentication or a GitHub remote is unavailable, the script prints a manual label checklist.
+If GitHub authentication or a GitHub remote is unavailable, the script prints a manual label checklist instead of failing.
 
 ---
 

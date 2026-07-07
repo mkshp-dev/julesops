@@ -142,9 +142,22 @@ See `docs/repo-config-spec.md` for the config contract.
 
 # 6. Create the required labels
 
-The repository should define the labels referenced in `julesops.yml`.
+Label creation runs **automatically at the end of `install-julesops.ps1`**. If the GitHub CLI (`gh`) is authenticated and a GitHub remote is detected, the 7 JulesOps labels are created on GitHub in the same step. If not, the script prints a manual checklist instead of failing.
 
-Recommended default labels:
+To skip label creation during install:
+
+```powershell
+.\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\target-repo" -BaseBranch main -SkipLabels
+```
+
+To bootstrap labels separately at any time:
+
+```powershell
+.\scripts\bootstrap-labels.ps1 -TargetRepo "C:\path\to\target-repo"
+.\scripts\bootstrap-labels.ps1 -TargetRepo "C:\path\to\target-repo" -DryRun
+```
+
+The required labels are:
 
 - `jules-queue`
 - `status:todo`
@@ -153,16 +166,6 @@ Recommended default labels:
 - `status:blocked`
 - `status:failed`
 - `status:done`
-
-These labels are the v1 state model.
-You can create or preview the required labels with:
-
-```powershell
-.\scripts\bootstrap-labels.ps1 -TargetRepo "C:\path\to\target-repo"
-.\scripts\bootstrap-labels.ps1 -TargetRepo "C:\path\to\target-repo" -DryRun
-```
-
-Run this from the JulesOps source repository. If GitHub authentication or a GitHub remote is unavailable, the script prints a manual label checklist.
 
 ---
 

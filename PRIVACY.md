@@ -1,38 +1,52 @@
 # Privacy Policy
 
-This policy describes the intended data handling for JulesOps.
+**Last updated: 2026-07-08**
 
-## Free Workflow Kit
+This policy describes how JulesOps handles data. It covers the free workflow kit, which is the only generally available product at this time.
 
-The free workflow kit runs inside the adopting repository using GitHub Actions. It does not send JulesOps job data to a JulesOps-hosted service.
+---
 
-Data handled by the free kit stays in GitHub surfaces owned by the adopter:
+## 1. What JulesOps is
 
-- issues
-- labels
-- pull requests
-- workflow logs
-- repository secrets such as `JULES_API_KEY`
+JulesOps is a free, open-source workflow kit that you install into your own GitHub repository. It consists of GitHub Actions workflows, configuration templates, and helper scripts.
 
-The free kit does not collect payment data, user analytics, or hosted telemetry.
+---
 
-## Planned Hosted Control Plane
+## 2. Free Workflow Kit — data handling
 
-The hosted GitHub App, dashboard, billing, RBAC, and multi-repo telemetry features are planned/prototyped. Before launch, this policy must be expanded to cover:
+The free workflow kit runs entirely inside GitHub Actions within your own repository. JulesOps does not operate a hosted backend for the free kit.
 
-- GitHub App installation data
-- repository metadata
-- issue and pull request metadata
-- webhook event retention
-- user authentication data
-- billing metadata
-- notification destinations
-- data deletion and export requests
+**Data that stays in your repository (GitHub surfaces you own):**
 
-## Payment Data
+- GitHub issues and labels
+- Pull requests
+- GitHub Actions workflow run logs
+- Repository secrets (e.g. `JULES_API_KEY`) — stored in GitHub's encrypted secrets store, not read by JulesOps servers
 
-JulesOps should not store raw payment card data. Any future paid plan should use a payment processor such as Stripe and store only subscription metadata required for plan enforcement.
+**JulesOps does not:**
 
-## Contact
+- Collect analytics or telemetry from the free kit
+- Transmit issue, PR, or repository data to JulesOps-operated servers
+- Store payment data (the free kit has no paid features)
+- Set cookies or track users
 
-Security and privacy concerns can be reported using the process in `SECURITY.md`.
+---
+
+## 3. Hosted service
+
+A hosted GitHub App, dashboard, billing, and multi-repo control plane are in development and are **not yet available**. When a hosted service launches, this policy will be updated before launch to cover the data collected and how it is used.
+
+---
+
+## 4. Third-party services
+
+The free kit interacts with:
+
+- **GitHub** — all workflow activity is subject to [GitHub's Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
+- **Google Jules** — issues dispatched to Jules are subject to Google's applicable terms. Review Google's privacy policy for Jules before use.
+
+---
+
+## 5. Contact
+
+Security and privacy concerns can be reported using the process in `SECURITY.md`. For general questions, open a GitHub issue.
