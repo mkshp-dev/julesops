@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-07-08
+
+### Changed
+- Integrated label bootstrap into install-julesops.ps1: GitHub labels are now created automatically at the end of every install or upgrade. Pass -SkipLabels to opt out.
+
+### Fixed
+- Fixed -DryRun mode calling ootstrap-labels.ps1 before julesops.yml was written, causing a false error. Dry-run now prints a descriptive note instead.
+
+### Documentation
+- Updated docs/install.md section 6: label creation is no longer a separate step.
+- Updated docs/marketplace-listing.md: gh CLI correctly documented as recommended rather than required.
+- Corrected config field count from 18 to 17 in docs/beta-report.md.
+- Added obsidian-sql-plugin beta test results to docs/beta-report.md.
+
 ## [0.3.0] - 2026-06-27
 
 This is the first public beta release of JulesOps, consolidating all Phase 2 and Phase 3 packaging features.

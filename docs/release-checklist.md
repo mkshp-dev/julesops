@@ -46,7 +46,16 @@ The resolver must not require PyYAML or network-installed packages.
 
 Confirm `.github/jules-repo.md` is preserved and `.github/julesops.yml` is not overwritten during normal upgrade.
 
-### 5. Preview Label Bootstrap
+### 5. Verify Integrated Label Bootstrap
+
+The installer now runs label bootstrapping automatically. For a fixture (no GitHub remote), verify it falls back to a manual checklist without erroring:
+
+```powershell
+# Already covered by step 2 above — the fresh-install output should include
+# "GitHub remote was not detected. Create these labels manually." and list all 7 labels.
+```
+
+To verify the standalone script still works independently:
 
 ```powershell
 .\scripts\bootstrap-labels.ps1 -TargetRepo $target -DryRun
