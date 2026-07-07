@@ -35,6 +35,17 @@ jobs:
         if: steps.config.outputs.enabled != 'true'
         run: echo "JulesOps disabled for this repository."
 
+      - name: Validate Jules API key is configured
+        if: steps.config.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          if [ -z "$JULES_API_KEY" ]; then
+            echo "::error::JULES_API_KEY secret is not set. Add it at: https://github.com/${{ github.repository }}/settings/secrets/actions — Get your key at: https://jules.google.com/settings/api"
+            exit 1
+          fi
+        env:
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+
       - name: Find active or queued Jules issue
         if: steps.config.outputs.enabled == 'true'
         id: queue
@@ -98,6 +109,7 @@ jobs:
           {
             echo "instructions<<${DELIM}"
             cat "$CORE_PATH"
+            echo ""
             echo "${DELIM}"
           } >> "$GITHUB_OUTPUT"
 
@@ -114,6 +126,7 @@ jobs:
             {
               echo "instructions<<${DELIM}"
               cat "$REPO_PATH"
+              echo ""
               echo "${DELIM}"
             } >> "$GITHUB_OUTPUT"
           else
@@ -138,6 +151,7 @@ jobs:
           {
             echo "issue_title<<${DELIM_TITLE}"
             jq -r '.title' issue.json
+            echo ""
             echo "${DELIM_TITLE}"
           } >> "$GITHUB_OUTPUT"
 
@@ -145,6 +159,7 @@ jobs:
           {
             echo "issue_body<<${DELIM_BODY}"
             jq -r '.body // ""' issue.json
+            echo ""
             echo "${DELIM_BODY}"
           } >> "$GITHUB_OUTPUT"
 

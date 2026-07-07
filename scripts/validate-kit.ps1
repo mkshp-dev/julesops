@@ -241,6 +241,28 @@ function Validate-JulesOpsConfig {
         } else {
           Write-Host "  [WARNING] Unable to retrieve remote labels for verification."
         }
+
+        # Check JULES_API_KEY secret exists
+        Write-Host "Verifying JULES_API_KEY secret on GitHub for '$repoName'..."
+        $oldToken2 = $env:GITHUB_TOKEN
+        if ($env:GITHUB_TOKEN -eq "github_pat_antigravitydummytoken") {
+          $env:GITHUB_TOKEN = $null
+        }
+        $secretsJson = gh secret list --repo $repoName --json name 2>$null
+        $env:GITHUB_TOKEN = $oldToken2
+
+        if ($secretsJson) {
+          $existingSecrets = ($secretsJson | ConvertFrom-Json).name
+          if ($existingSecrets -contains "JULES_API_KEY") {
+            Write-Host "  JULES_API_KEY secret is configured."
+          } else {
+            Write-Host "  [WARNING] JULES_API_KEY secret is NOT set. Dispatch will fail without it."
+            Write-Host "  Set it at:    https://github.com/$repoName/settings/secrets/actions"
+            Write-Host "  Get your key: https://jules.google.com/settings/api"
+          }
+        } else {
+          Write-Host "  [WARNING] Unable to retrieve repository secrets (may require admin access)."
+        }
       } else {
         Write-Host "  [WARNING] Not authenticated with gh CLI. Skipping remote label checks."
       }

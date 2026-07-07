@@ -169,13 +169,29 @@ The required labels are:
 
 ---
 
-# 7. Add the Jules secret
+# 7. Add the Jules API key
 
-The dispatch workflow expects a repository secret named:
+The dispatch workflow requires a repository secret named `JULES_API_KEY`. Without it, dispatch will fail immediately with a clear error.
 
-- `JULES_API_KEY`
+**Get your API key:**
 
-Without this secret, dispatch will fail and the issue should be marked `status:failed`.
+Visit [jules.google.com/settings/api](https://jules.google.com/settings/api) and generate or copy your API key.
+
+**Add it to your repository:**
+
+1. Go to your repository on GitHub.
+2. Navigate to **Settings → Secrets and variables → Actions**.
+3. Click **New repository secret**.
+4. Set the name to `JULES_API_KEY` and paste your key as the value.
+5. Click **Add secret**.
+
+Or use the direct link (replace with your repo):
+
+```
+https://github.com/<owner>/<repo>/settings/secrets/actions
+```
+
+> **Note:** The installer prints a reminder banner with the exact URL for your repository after installation. The dispatch workflow also validates the secret before doing any work — if it's missing, you'll see an explicit `::error::` in the Actions log with a link to the settings page.
 
 ---
 

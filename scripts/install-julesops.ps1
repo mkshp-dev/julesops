@@ -153,7 +153,7 @@ if ($SkipLabels) {
   $bootstrapScript = Join-Path $scriptRoot "bootstrap-labels.ps1"
   if (Test-Path -LiteralPath $bootstrapScript) {
     if ($DryRun) {
-      Write-Host "[DryRun] Would bootstrap GitHub labels via bootstrap-labels.ps1 (skipped in dry-run — config not written yet)."
+      Write-Host "[DryRun] Would bootstrap GitHub labels via bootstrap-labels.ps1 (skipped in dry-run - config not written yet)."
     } else {
       Write-Host ""
       Write-Host "--- Bootstrapping GitHub labels ---"
@@ -163,3 +163,34 @@ if ($SkipLabels) {
     Write-Host "Warning: bootstrap-labels.ps1 not found at $bootstrapScript. Create labels manually."
   }
 }
+
+# --- JULES_API_KEY reminder ---
+$remoteUrl = $null
+try {
+  $oldEAP = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  $remoteUrl = git -C $targetRoot remote get-url origin 2>$null
+} catch {} finally {
+  $ErrorActionPreference = $oldEAP
+}
+$repoName = $null
+if ($remoteUrl -and ($remoteUrl -match 'github\.com[:/]([^/]+/[^/]+?)(?:\.git)?\s*$')) {
+  $repoName = $Matches[1]
+}
+
+Write-Host ""
+Write-Host "========================================================================"
+Write-Host "  ACTION REQUIRED: Add your Jules API key as a GitHub repository secret"
+Write-Host "========================================================================"
+Write-Host ""
+Write-Host "  Secret name:  JULES_API_KEY"
+Write-Host ""
+if ($repoName) {
+  Write-Host "  Set it at:    https://github.com/$repoName/settings/secrets/actions"
+} else {
+  Write-Host "  Set it at:    https://github.com/OWNER/REPO/settings/secrets/actions"
+}
+Write-Host "  Get your key: https://jules.google.com/settings/api"
+Write-Host ""
+Write-Host "  Without this secret, Jules Dispatch will fail with a 401 error."
+Write-Host "========================================================================"
