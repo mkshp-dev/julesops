@@ -99,7 +99,7 @@ The resolver uses only Python stdlib — no PyYAML or network packages required.
 
 ### Friction points
 
-1. **Label bootstrapping is a separate step**: A new operator may forget to run `bootstrap-labels.ps1` after installation. The installer could print a reminder.
+1. **~~Label bootstrapping is a separate step~~** *(Fixed)*: Label creation is now integrated into the installer. `bootstrap-labels.ps1` runs automatically at the end of `install-julesops.ps1`. Pass `-SkipLabels` to opt out.
 2. **Upgrade vs. fresh install UX**: A first-time user who runs the installer twice (e.g. after a failed first attempt) hits the "already exists" error and must know about `-Upgrade` or `-Force`. The error message is clear, but this could be smoother.
 3. **`JULES_API_KEY` secret not validated**: The installer has no way to check whether the GitHub secret is configured. Dispatch will silently fail until the user adds it.
 

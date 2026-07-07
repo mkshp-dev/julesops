@@ -6,7 +6,8 @@ param(
   [string]$QueueLabel = "jules-queue",
   [switch]$Force,
   [switch]$DryRun,
-  [switch]$Upgrade
+  [switch]$Upgrade,
+  [switch]$SkipLabels
 )
 
 $ErrorActionPreference = "Stop"
@@ -138,5 +139,23 @@ if ($DryRun) {
     Write-Host "Upgraded JulesOps in $targetRoot successfully to version $KitVersion."
   } else {
     Write-Host "Installed JulesOps into $targetRoot (version $KitVersion)"
+  }
+}
+
+# --- Label bootstrap ---
+if ($SkipLabels) {
+  if ($DryRun) {
+    Write-Host "[DryRun] Skipping label bootstrap (-SkipLabels)."
+  } else {
+    Write-Host "Skipping label bootstrap (-SkipLabels). Run bootstrap-labels.ps1 manually when ready."
+  }
+} else {
+  $bootstrapScript = Join-Path $scriptRoot "bootstrap-labels.ps1"
+  if (Test-Path -LiteralPath $bootstrapScript) {
+    Write-Host ""
+    Write-Host "--- Bootstrapping GitHub labels ---"
+    & $bootstrapScript -TargetRepo $TargetRepo $(if ($DryRun) { "-DryRun" })
+  } else {
+    Write-Host "Warning: bootstrap-labels.ps1 not found at $bootstrapScript. Create labels manually."
   }
 }
