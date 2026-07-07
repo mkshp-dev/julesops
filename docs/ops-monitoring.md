@@ -11,10 +11,12 @@ The current server skeleton exposes these health check endpoints:
 
 | Endpoint | Description |
 | --- | --- |
-| `GET /health` | Returns `200 OK` if the service is running |
+| `GET /health` | Returns `200 OK` with service name, uptime, and storage type |
 | `GET /health/db` | Returns DB connectivity status |
-| `GET /health/stripe` | Returns Stripe API reachability |
-| `GET /health/github` | Returns GitHub API rate-limit status |
+| `GET /health/github` | Returns GitHub App credential configuration status |
+| `GET /health/stripe` | Returns Stripe credential configuration status |
+| `GET /health/alerts` | Returns alert worker status, rule count, destination count, and delivery count |
+| `GET /ready` | Returns readiness status (`200` when healthy, `503` when DB is unreachable) |
 
 These endpoints should be polled by an external uptime monitor (e.g. UptimeRobot, Better Uptime) every 60 seconds.
 
@@ -23,11 +25,18 @@ The current server skeleton exports initial Prometheus-compatible metrics at `/m
 
 | Metric | Description |
 | --- | --- |
-| `julesops_webhook_received_total` | Total webhooks received, labelled by event type |
-| `julesops_webhook_processing_duration_seconds` | Histogram of handler processing time |
+| `julesops_webhook_received_total` | Total webhooks accepted by the server |
+| `julesops_webhook_failed_total` | Total webhook requests rejected or failed |
 | `julesops_jobs_active_total` | Gauge of currently active jobs across all installations |
-| `julesops_dispatch_failures_total` | Counter of failed dispatch workflow runs |
-| `julesops_db_query_duration_seconds` | Histogram of DB query latency |
+| `julesops_jobs_failed_total` | Gauge of currently failed jobs |
+| `julesops_db_healthy` | Whether the database health check is currently passing |
+| `julesops_alert_rules_total` | Number of alert rules known to the control plane |
+| `julesops_notification_destinations_total` | Number of notification destinations configured |
+| `julesops_alert_deliveries_total` | Total recorded alert deliveries |
+| `julesops_alert_worker_enabled` | Whether the alert worker is enabled |
+| `julesops_uptime_seconds` | Service uptime in seconds |
+| `webhook_processing_duration_seconds` | Histogram of webhook handler processing time |
+| `db_query_duration_seconds` | Histogram of DB query latency |
 
 ### 1.3 Alerting Rules
 The following conditions should trigger operator PagerDuty/Slack alerts. Email delivery uses SendGrid via `SENDGRID_API_KEY` and `ALERT_EMAIL_FROM` when configured; demo mode can still fall back to console logging:

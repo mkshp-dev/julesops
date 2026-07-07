@@ -13,6 +13,81 @@
       "full_name": "mkshp-dev/julesops",
       "base_branch": "main",
       "is_active": true
+    },
+    {
+      "id": 9001,
+      "installation_id": 2002,
+      "full_name": "test-org/repo-a",
+      "owner_login": "test-org",
+      "repo_name": "repo-a",
+      "base_branch": "main",
+      "private": false,
+      "is_active": true,
+      "config_snapshot": null,
+      "config_version": null,
+      "configured": false,
+      "created_at": "2026-07-07T17:20:09.223Z",
+      "updated_at": "2026-07-07T17:20:09.223Z"
+    },
+    {
+      "id": 9002,
+      "installation_id": 2002,
+      "full_name": "test-org/repo-b",
+      "owner_login": "test-org",
+      "repo_name": "repo-b",
+      "base_branch": "main",
+      "private": false,
+      "is_active": true,
+      "config_snapshot": null,
+      "config_version": null,
+      "configured": false,
+      "created_at": "2026-07-07T17:20:09.224Z",
+      "updated_at": "2026-07-07T17:20:09.224Z"
+    },
+    {
+      "id": 8001,
+      "installation_id": 3001,
+      "full_name": "test-org/new-repo",
+      "owner_login": "test-org",
+      "repo_name": "new-repo",
+      "base_branch": "main",
+      "private": false,
+      "is_active": true,
+      "config_snapshot": null,
+      "config_version": null,
+      "configured": false,
+      "created_at": "2026-07-07T17:20:09.237Z",
+      "updated_at": "2026-07-07T17:20:09.237Z"
+    },
+    {
+      "id": 8003,
+      "installation_id": 3003,
+      "full_name": "o/a",
+      "owner_login": "o",
+      "repo_name": "a",
+      "base_branch": "main",
+      "private": false,
+      "is_active": true,
+      "config_snapshot": null,
+      "config_version": null,
+      "configured": false,
+      "created_at": "2026-07-07T17:20:09.243Z",
+      "updated_at": "2026-07-07T17:20:09.243Z"
+    },
+    {
+      "id": 8004,
+      "installation_id": 3003,
+      "full_name": "o/b",
+      "owner_login": "o",
+      "repo_name": "b",
+      "base_branch": "main",
+      "private": false,
+      "is_active": true,
+      "config_snapshot": null,
+      "config_version": null,
+      "configured": false,
+      "created_at": "2026-07-07T17:20:09.251Z",
+      "updated_at": "2026-07-07T17:20:09.251Z"
     }
   ],
   "jobs": [
@@ -56,5 +131,47 @@
       "received_at": "2026-06-27T13:59:47.009Z",
       "signature": "verified"
     }
-  ]
+  ],
+  "installations": [
+    {
+      "id": 2001,
+      "app_id": 42,
+      "account_login": "test-org",
+      "account_type": "Organization",
+      "target_type": "Organization",
+      "access_tokens_url": "https://api.github.com/app/installations/2001/access_tokens",
+      "html_url": "https://github.com/apps/julesops/installations/2001",
+      "suspended": false,
+      "created_at": "2026-07-07T17:20:09.215Z",
+      "updated_at": "2026-07-07T17:20:09.216Z"
+    },
+    {
+      "id": 2002,
+      "app_id": 42,
+      "account_login": "test-org",
+      "account_type": "Organization",
+      "target_type": "Organization",
+      "access_tokens_url": "https://api.github.com/app/installations/2002/access_tokens",
+      "html_url": "https://github.com/apps/julesops/installations/2002",
+      "suspended": false,
+      "created_at": "2026-07-07T17:20:09.221Z",
+      "updated_at": "2026-07-07T17:20:09.221Z"
+    },
+    {
+      "id": 2005,
+      "app_id": 42,
+      "account_login": "test-org",
+      "account_type": "Organization",
+      "target_type": "Organization",
+      "access_tokens_url": "https://api.github.com/app/installations/2005/access_tokens",
+      "html_url": "https://github.com/apps/julesops/installations/2005",
+      "suspended": false,
+      "created_at": "2026-07-07T17:20:09.232Z",
+      "updated_at": "2026-07-07T17:20:09.232Z"
+    }
+  ],
+  "alert_rules": [],
+  "notification_destinations": [],
+  "alert_deliveries": [],
+  "admin_actions": []
 }
