@@ -50,17 +50,29 @@ The long-term product goal is to make JulesOps available through GitHub Marketpl
 
 See the GitHub issue tracker for the remaining Marketplace and control-plane work. Use [docs/release-checklist.md](docs/release-checklist.md) before tagging workflow-kit releases.
 
+> [!NOTE]
+> **Free Kit First**: We focus on delivering the free core kit first. For current work, active tasks, and roadmap items, please check our GitHub issues.
+
 ## Repository layout
 
 ```text
 julesops/
 ├─ README.md
 ├─ docs/
+│  ├─ app-development.md
 │  ├─ architecture.md
+│  ├─ beta-report.md
+│  ├─ deployment.md
 │  ├─ install.md
+│  ├─ local-webhook-dev.md
+│  ├─ marketplace-listing.md
+│  ├─ ops-monitoring.md
 │  ├─ product.md
+│  ├─ public-docs.md
+│  ├─ release-checklist.md
 │  ├─ repo-config-spec.md
-│  └─ state-machine.md
+│  ├─ state-machine.md
+│  └─ support-runbook.md
 ├─ scripts/
 │  ├─ install-julesops.ps1
 │  └─ validate-kit.ps1
@@ -137,25 +149,25 @@ These can be overridden in `.github/julesops.yml`.
 
 ## Development milestones
 
-### Milestone 1 - installable workflow kit
+### Milestone 1 - installable workflow kit (Completed)
 
 - keep canonical templates in `templates/` and `workflows/`
 - install the kit into external repositories with `scripts/install-julesops.ps1`
 - validate kit integrity with `scripts/validate-kit.ps1`
 - keep examples complete enough to copy and reason from
 
-### Milestone 2 - ops hardening
+### Milestone 2 - ops hardening (Completed in v0.3.x)
 
 - add retry / requeue flow
 - tighten issue to PR to Jules correlation rules
 - validate branch targeting and required issue links
 - add optional comment-command ergonomics if useful
 
-### Milestone 3 - marketplace foundation
+### Milestone 3 - marketplace foundation (Current Focus)
 
-- test the kit in multiple external repositories
+- evaluate multi-repo adoption and feedback
 - decide what should move into reusable actions
-- define the GitHub App installation model
+- define the GitHub App installation model and Marketplace listing
 - design the paid dashboard / multi-repo control plane
 
 ## Non-goals for the free core
