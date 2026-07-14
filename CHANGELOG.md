@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 - Added `docs/e2e-adoption-test.md`: full E2E adoption test results for `obsidian-sql-plugin` (kit v0.3.1). All 7 test matrix scenarios passed — happy path and all non-happy-path scenarios. Closes #69.
+
+### Added
+- `action.yml`: thin composite action at repo root enabling GitHub Marketplace listing. Prints install guide pointing adopters to `docs/install.md`. Closes #91.
+
+### Changed
+- `.gitignore`: expanded with `.env`, `*.pem`, `keys/`, `server/data/`, OS/IDE patterns before making the repository public. Closes #90 (prep step).
+- Repository visibility changed to **public** at https://github.com/mkshp-dev/julesops. Closes #90.
 - Added `docs/troubleshooting.md`: standalone troubleshooting guide extracted from `docs/install.md` §10 with expanded coverage. Closes #78.
 - Added cross-platform install section to `docs/install.md` (macOS/Linux via PowerShell Core). Closes #79.
 - Added `max_active_jobs` per-repo scope clarification to `docs/repo-config-spec.md`. Closes #87.
