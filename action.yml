@@ -1,10 +1,10 @@
 name: 'JulesOps'
-description: 'Orchestrate Google Jules inside GitHub. Queue issues, dispatch safely, sync state, and catch failures.'
+description: 'Run Google Jules safely from GitHub. JulesOps adds reliable queueing, state sync, and retry capabilities automatically.'
 author: 'mkshp-dev'
 
 branding:
   icon: 'zap'
-  color: 'purple'
+  color: 'blue'
 
 # JulesOps is a workflow kit installed via script into adopting repositories.
 # This action.yml satisfies GitHub Marketplace listing requirements.
