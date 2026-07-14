@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-15
+
 ### Documentation
+- Rewrote `README.md` and `docs/marketplace-listing.md` to optimize for developer adoption, onboarding, and security trust.
 - Added `docs/e2e-adoption-test.md`: full E2E adoption test results for `obsidian-sql-plugin` (kit v0.3.1). All 7 test matrix scenarios passed — happy path and all non-happy-path scenarios. Closes #69.
 
 ### Added
