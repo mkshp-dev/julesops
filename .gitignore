@@ -1,2 +1,28 @@
-server/node_modules/**
+# Dependencies
+server/node_modules/
+node_modules/
+
+# Local environment — never commit real secrets
+.env
+.env.local
+.env.*.local
+
+# Private key files
+*.pem
+keys/
+
+# Local server data (JSON demo store)
+server/data/
+
+# Beta test repos (local working copies)
 beta-test/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.suo
+*.user

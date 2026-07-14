@@ -1,0 +1,42 @@
+name: 'JulesOps'
+description: 'Orchestrate Google Jules inside your GitHub workflow. Queue issues, dispatch safely, sync state, catch failures — no babysitting required.'
+author: 'mkshp-dev'
+
+branding:
+  icon: 'zap'
+  color: 'purple'
+
+# JulesOps is a workflow kit installed via script into adopting repositories.
+# This action.yml satisfies GitHub Marketplace listing requirements.
+#
+# The kit includes:
+#   - jules-dispatch.yml    — queues and dispatches Jules tasks
+#   - jules-state-sync.yml  — syncs issue state from PR events and comments
+#   - jules-watchdog.yml    — detects and flags stale active jobs
+#
+# Install the kit into a target repository:
+#   .\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\repo" -BaseBranch main
+#
+# Full install guide: https://github.com/mkshp-dev/julesops/blob/main/docs/install.md
+
+runs:
+  using: 'composite'
+  steps:
+    - name: JulesOps kit info
+      shell: bash
+      run: |
+        echo ""
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║  JulesOps — GitHub-native orchestration for Google Jules    ║"
+        echo "╠══════════════════════════════════════════════════════════════╣"
+        echo "║                                                              ║"
+        echo "║  JulesOps is a workflow KIT, not a single-step action.      ║"
+        echo "║  Install it into your repository with the installer script: ║"
+        echo "║                                                              ║"
+        echo "║  .\scripts\install-julesops.ps1 -TargetRepo <path>         ║"
+        echo "║                                                              ║"
+        echo "║  Install guide:                                              ║"
+        echo "║  https://github.com/mkshp-dev/julesops/blob/main/docs/install.md  ║"
+        echo "║                                                              ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo ""
