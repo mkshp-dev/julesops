@@ -1,5 +1,5 @@
 name: 'JulesOps'
-description: 'Orchestrate Google Jules inside your GitHub workflow. Queue issues, dispatch safely, sync state, catch failures — no babysitting required.'
+description: 'Orchestrate Google Jules inside GitHub. Queue issues, dispatch safely, sync state, and catch failures.'
 author: 'mkshp-dev'
 
 branding:

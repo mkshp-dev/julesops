@@ -6,9 +6,9 @@ This document contains the copy and pricing summary for the GitHub Marketplace s
 
 ---
 
-## Short description (≤ 160 characters)
+## Short description (≤ 125 characters)
 
-> Orchestrate Google Jules inside your GitHub workflow. Queue issues, dispatch safely, sync state, catch failures — no babysitting required.
+> Orchestrate Google Jules inside GitHub. Queue issues, dispatch safely, sync state, and catch failures.
 
 ---
 
