@@ -8,46 +8,15 @@ This document contains the copy and pricing summary for the GitHub Marketplace s
 
 ## Short description (≤ 125 characters)
 
-> Orchestrate Google Jules inside GitHub. Queue issues, dispatch safely, sync state, and catch failures.
+> Run Google Jules safely from GitHub. JulesOps adds reliable queueing, state sync, and retries automatically.
 
 ---
 
 ## Full description
 
-JulesOps is a **Jules-specific DevOps layer** for GitHub repositories. It bridges the gap between a GitHub issue tracker and Google Jules, giving maintainers a controlled, auditable workflow instead of ad-hoc prompting.
+Run Google Jules safely from GitHub.
 
-### What it does
-
-**Queue and dispatch**
-Add a `jules-queue` label to any GitHub issue formatted with the JulesOps issue template. The dispatch workflow picks it up, moves it to `status:in-progress`, and fires Jules with the right instructions and repository context — one task at a time.
-
-**State synchronization**
-When Jules opens a pull request the issue moves to `status:review`. When the PR merges the issue closes. When Jules signals a blocker the issue moves to `status:blocked` and a comment explains why. No manual label management.
-
-**Safety rails**
-- Dispatch is gated on a single active job per repository.
-- Pull requests must target the configured base branch.
-- Issues must link back to a valid open issue before dispatch proceeds.
-
-**Watchdog**
-A scheduled watchdog detects stale in-progress and review states and posts a comment nudging the maintainer before work silently disappears.
-
-**Legible failures**
-Failed runs land on `status:failed` with a comment explaining the failure. Issues can be requeued with a `/jules retry` comment.
-
-### What you get (free kit)
-
-- GitHub issue template for Jules tasks
-- Dispatch, state-sync, and watchdog workflow files
-- Repository config contract (`.github/julesops.yml`)
-- Generic Jules orchestration instructions
-- PowerShell installer and validator scripts
-- Label bootstrap script
-- Config resolver (pure Python stdlib, no dependencies)
-
-### What is not included
-
-The free kit is a single-repository workflow kit. There is no hosted dashboard, cross-repo visibility, or billing integration in the free tier. A hosted control plane with those features is in development.
+JulesOps adds reliable orchestration around Jules by handling queueing, synchronization, retries, and pull request state automatically. Set it up in under five minutes to keep your repository clean, prevent duplicate runs, and recover from failures automatically.
 
 ---
 

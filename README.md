@@ -1,193 +1,148 @@
 # JulesOps
 
-![JulesOps](docs/assets/WideBannerLogo.png)
+Run Google Jules safely inside GitHub.
 
-JulesOps is a **Jules-specific DevOps layer** for GitHub repositories.
+JulesOps is a GitHub Action that turns pull requests, comments, and labels into a reliable automation workflow for Google Jules.
 
-Its goal is to make Google Jules usable as a reliable implementation agent inside real repository workflows by adding:
+✔ Queue jobs  
+✔ Prevent duplicate runs  
+✔ Synchronize PR state  
+✔ Recover from failures  
+✔ Works with any repository  
 
-- **Queueing and dispatch** of Jules work from GitHub issues
-- **State synchronization** between issues, Jules runs, and pull requests
-- **Safety rails** such as branch targeting rules, blocked-task handling, and explicit review states
-- **Observability** around what Jules is working on, what is blocked, and what has been merged
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-JulesOps-blueviolet?logo=github)](https://github.com/marketplace/actions/julesops)
+[![Latest Release](https://img.shields.io/github/v/release/mkshp-dev/julesops?logo=github)](https://github.com/mkshp-dev/julesops/releases)
+[![License](https://img.shields.io/github/license/mkshp-dev/julesops)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/mkshp-dev/julesops?style=social)](https://github.com/mkshp-dev/julesops/stargazers)
+[![Open Issues](https://img.shields.io/github/issues/mkshp-dev/julesops)](https://github.com/mkshp-dev/julesops/issues)
 
-## Current scope
-
-This repository is the **JulesOps source kit**, not an adopting repository.
-
-The current product surface is a portable workflow kit that can be installed into another GitHub repository for testing and adoption. It includes:
-
-- a reusable GitHub issue template for Jules tasks
-- generic orchestration instructions for Jules
-- a repo config contract via `.github/julesops.yml`
-- canonical dispatch, state-sync, and watchdog workflow templates
-- installer and validator scripts
-- install / adoption docs and a concrete Aggregator example
-
-## Product direction
-
-JulesOps is intentionally **Jules-specific** for the first phase.
-
-The near-term product thesis is:
-
-> Turn GitHub issues into safe, reviewable Jules work, and keep issue/PR state coherent without maintainers having to babysit the workflow.
-
-The long-term product goal is to make JulesOps available through GitHub Marketplace.
-
-1. **Free core / open workflow kit**
-   - reusable issue template
-   - dispatch workflow
-   - state sync workflow
-   - watchdog workflow
-   - repo configuration
-   - installer / validator scripts
-   - adoption docs / examples
-
-2. **Paid control plane**
-   - cross-repo visibility
-   - job history and analytics
-   - stale-run detection and operational alerts
-   - multi-repo management and reporting
-   - hosted setup / upgrade management
-
-See the GitHub issue tracker for the remaining Marketplace and control-plane work. Use [docs/release-checklist.md](docs/release-checklist.md) before tagging workflow-kit releases.
-
-> [!NOTE]
-> **Free Kit First**: We focus on delivering the free core kit first. For current work, active tasks, and roadmap items, please check our GitHub issues.
-
-## Repository layout
-
-```text
-julesops/
-├─ README.md
-├─ docs/
-│  ├─ assets/                   # logo and screenshot assets
-│  │  ├─ logo.png
-│  │  ├─ WideBannerLogo.png
-│  │  ├─ IssueTemplateSS.png
-│  │  ├─ DispatchWorkflowSS.png
-│  │  └─ StateFlowSS.png
-│  ├─ app-development.md
-│  ├─ architecture.md
-│  ├─ beta-report.md
-│  ├─ deployment.md
-│  ├─ e2e-adoption-test.md
-│  ├─ install.md
-│  ├─ marketplace-listing.md
-│  ├─ release-checklist.md
-│  ├─ repo-config-spec.md
-│  ├─ state-machine.md
-│  ├─ troubleshooting.md
-│  └─ support-runbook.md
-├─ scripts/
-│  ├─ bootstrap-labels.ps1
-│  ├─ install-julesops.ps1
-│  ├─ uninstall-julesops.ps1
-│  └─ validate-kit.ps1
-├─ server/                   # hosted control-plane skeleton
-├─ templates/
-│  ├─ jules-core.md
-│  ├─ jules-task.yml
-│  └─ julesops.yml
-├─ workflows/
-│  ├─ jules-dispatch.yml
-│  ├─ jules-state-sync.yml
-│  └─ jules-watchdog.yml
-└─ examples/
-   └─ aggregator/
+```yaml
+- uses: mkshp-dev/julesops@v1
+  with:
+    jules-api-key: ${{ secrets.JULES_API_KEY }}
 ```
 
-## Quick install into a test repository
+---
 
-From this repository, run:
+## Why JulesOps?
 
-```powershell
-.\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\target-repo" -BaseBranch main
-.\scripts\validate-kit.ps1 -TargetRepo "C:\path\to\target-repo"
+Google Jules is powerful, but managing concurrent requests, retries, stale pull requests, and synchronization quickly becomes difficult. 
+
+JulesOps handles the operational layer so you can focus on reviewing code.
+
+---
+
+## Features
+
+✓ **Job queue** — Serializes tasks to prevent overlapping runs.  
+✓ **Retry failed operations** — Re-run failed tasks with a single comment.  
+✓ **Automatic state synchronization** — Moves issues through `todo ➔ in progress ➔ review ➔ done` based on Git activity.  
+✓ **Comment-based workflow** — Keep maintainers in the loop with automated issue updates.  
+✓ **Safe concurrent execution** — Gates runs so only one active job proceeds per repository.  
+✓ **GitHub-native** — State is stored directly in issue labels, no databases required.  
+✓ **No external infrastructure required** — Runs entirely on GitHub Actions.  
+
+---
+
+## Quick Start
+
+Get up and running in under 2 minutes:
+
+1. **Add workflow**: Run the installer script in your repository:
+   ```powershell
+   .\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\repo" -BaseBranch main
+   ```
+   *(Or refer to the [Manual Installation](docs/install.md#4-manual-install) guide)*
+2. **Add API key**: Save your Jules API key as a repository secret named `JULES_API_KEY` (Settings ➔ Secrets and variables ➔ Actions).
+3. **Create PR**: Open a pull request or issue with a task description.
+4. **Comment**: Comment `/jules retry` or add the `jules-queue` label to trigger the dispatch.
+
+Done.
+
+---
+
+## Example
+
+Here is a complete, single-file workflow example for dispatching Jules tasks:
+
+```yaml
+# .github/workflows/jules-dispatch.yml
+name: Jules Dispatch
+
+on:
+  schedule:
+    - cron: "15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run JulesOps Orchestration
+        uses: mkshp-dev/julesops@v1
+        with:
+          jules-api-key: ${{ secrets.JULES_API_KEY }}
 ```
 
-Then, in the target repository:
+---
 
-1. Edit `.github/jules-repo.md` with repository-specific Jules guidance.
-2. Create the labels referenced by `.github/julesops.yml`.
-3. Add the `JULES_API_KEY` repository secret.
-4. Create a Jules task issue and run `Jules Dispatch` manually.
+## Demo
 
-See [docs/install.md](docs/install.md) for the full install guide.
+![JulesOps in Action](docs/assets/demo.gif)
+*(Note: Record a 15-second demo of a PR opening, a `/jules` comment triggering Jules, and the PR updating, then save it to `docs/assets/demo.gif` to display it here).*
 
-## How it looks
+---
 
-| Issue template | Dispatch run | State flow |
-|---|---|---|
-| ![Issue template](docs/assets/IssueTemplateSS.png) | ![Dispatch workflow](docs/assets/DispatchWorkflowSS.png) | ![State flow](docs/assets/StateFlowSS.png) |
+## Architecture
 
+JulesOps is split into two logical layers:
+- **Local Workflow Kit**: The issue templates, labels, and state synchronization rules running in your repository via GitHub Actions.
+- **State Machine**: Driven by GitHub labels (`status:todo`, `status:in-progress`, `status:review`, `status:blocked`, `status:failed`, `status:done`).
 
-## What lives where
+For a detailed deep dive, see the [Architecture Documentation](docs/architecture.md) and [Product Boundaries](docs/product.md).
 
-### JulesOps owns
+---
 
-- queueing and dispatch logic
-- issue to PR state transitions
-- blocked / failed conventions
-- stale-state detection via the watchdog workflow
-- the generic Jules orchestration contract
-- the repo config contract
-- reusable workflow / template artifacts
-- installer and validation tooling
+## Security
 
-### The adopting repository owns
+- **Permissions Required**: The workflow requires `contents: read` to access repository config/files, and `issues: write` to manage status labels and post comments.
+- **Secrets Used**: Your `JULES_API_KEY` is required to communicate with Google Jules. It is never stored or exposed in logs.
+- **Data Egress**: Only code context, instructions, and issue text relevant to the selected task are sent to Google Jules. No other repository data leaves GitHub.
+- **Failure Behavior**: If a task fails or blocks, the workflow posts the error log as an issue comment and rolls back to a safe state without committing bad code.
 
-- repo-specific implementation guidance in `.github/jules-repo.md`
-- its base branch and label names via `.github/julesops.yml`
-- issue acceptance criteria and scope
-- domain-specific migration / testing / architecture rules
+---
 
-## Current watchdog behavior
+## FAQ
 
-The watchdog implementation is intentionally conservative.
+### Why not invoke Jules directly?
+Invoking Jules directly lacks queue management, leading to duplicate runs, race conditions on pull requests, and uncoordinated state between issues and code.
 
-It currently:
+### Why a queue?
+To prevent concurrent runs from stomping on each other, keeping development serial and code changes easy to review.
 
-- scans open Jules issues in `in-progress`
-- scans open Jules issues in `review`
-- checks how long they have gone without GitHub activity
-- posts a structured reminder comment when they cross a configured staleness threshold
+### Can multiple repositories use it?
+Yes, each repository installs its own local kit or accesses the shared app listing.
 
-The watchdog is **comment-only**. It does not automatically requeue, relabel, or close issues.
+### Does it work on forks?
+No, for security reasons GitHub Action secrets (`JULES_API_KEY`) are not passed to pull requests from forks.
 
-Default thresholds:
+### What happens if Jules is unavailable?
+The job is labeled `status:failed` with a clear explanation, and can be retried later using `/jules retry`.
 
-- `in-progress`: 24 hours
-- `review`: 72 hours
+---
 
-These can be overridden in `.github/julesops.yml`.
+## Roadmap
 
-## Development milestones
-
-### Milestone 1 - installable workflow kit (Completed)
-
-- keep canonical templates in `templates/` and `workflows/`
-- install the kit into external repositories with `scripts/install-julesops.ps1`
-- validate kit integrity with `scripts/validate-kit.ps1`
-- keep examples complete enough to copy and reason from
-
-### Milestone 2 - ops hardening (Completed in v0.3.x)
-
-- add retry / requeue flow
-- tighten issue to PR to Jules correlation rules
-- validate branch targeting and required issue links
-- add optional comment-command ergonomics if useful
-
-### Milestone 3 - marketplace foundation (Current Focus)
-
-- evaluate multi-repo adoption and feedback
-- decide what should move into reusable actions
-- define the GitHub App installation model and Marketplace listing
-- design the paid dashboard / multi-repo control plane
-
-## Non-goals for the free core
-
-- requiring a hosted backend for single-repository orchestration
-- broad project management / roadmap tooling
-- replacing repository-specific coding instructions
-- hiding basic issue to PR orchestration behind a paid layer
+- [ ] Multiple Jules providers
+- [ ] Operational dashboard
+- [ ] Performance metrics
+- [ ] GitHub App integration
+- [ ] Cloud control plane
