@@ -50,10 +50,13 @@ JulesOps will provide the repository’s configured base branch.
 Jules should:
 - create work against that configured base branch
 - open a PR that targets the configured base branch
-- link the issue in the PR description when appropriate
+- link the issue in the PR description using one of the GitHub-recognized closing keywords:
+  - `Closes #N`, `Fixes #N`, or `Resolves #N` (where N is the issue number)
+  - This must appear in the PR **body**, not just the title or a comment
 
 Jules should not:
 - open a PR against an arbitrary branch
+- open a PR without a `Closes #N`, `Fixes #N`, or `Resolves #N` reference in the body
 - merge its own PR unless explicitly instructed
 - change repository automation as part of a normal task unless the issue explicitly asks for it
 

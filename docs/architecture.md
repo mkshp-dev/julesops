@@ -531,3 +531,100 @@ The billing system subscribes to the following Stripe webhooks to keep subscript
 | `customer.subscription.updated` | Sync plan tier changes |
 | `customer.subscription.deleted` | Downgrade to free tier, preserve data for 30 days |
 | `invoice.payment_failed` | Set `subscriptions.status = past_due`, notify org Owner |
+
+---
+
+# 14. ADR-001: Reusable GitHub Actions Extraction (Issue #84)
+
+**Date**: 2026-07-15
+**Status**: Deferred — do not extract before Marketplace launch
+
+---
+
+## Context
+
+The three JulesOps workflows (`jules-dispatch.yml`, `jules-state-sync.yml`, `jules-watchdog.yml`) share repeated patterns:
+
+1. **Config resolution** — all three begin with `python3 .github/resolve-config.py` and consume its outputs
+2. **Label transitions** — `gh issue edit --remove-label / --add-label` sequences appear in dispatch and state-sync
+3. **Status comments** — `gh issue comment` calls with structured bodies appear across all three
+
+The question is whether these should be extracted into [composite GitHub Actions](https://docs.github.com/en/actions/creating-actions/creating-a-composite-action) or reusable workflows.
+
+---
+
+## Options Evaluated
+
+### Option A — Extract `resolve-config` composite action
+
+A `julesops/resolve-config-action` that wraps the Python resolver step. Workflows call `uses: mkshp-dev/julesops/.github/actions/resolve-config@v1`.
+
+**Pros:**
+- Single place to update if config fields change
+- DRY across all three workflows
+
+**Cons:**
+- All three workflows already resolve config in one line (`python3 .github/resolve-config.py`). There is no duplicated logic — only a repeated call to the same script.
+- Adopters pin their workflow files at install time via `-Upgrade`. A composite action reference creates a new remote dependency that must also be pinned and upgraded independently.
+- Composite actions cannot set `GITHUB_OUTPUT` from a sub-action with the same scoping behavior in all runner environments — this would require output re-mapping boilerplate.
+- Adds a new upgrade surface: adopters would need to upgrade the action reference AND the workflow files separately.
+
+**Verdict: Not worth it.** The resolver is already a single Python file installed into the adopting repo. The "duplication" is a one-liner call, not logic.
+
+---
+
+### Option B — Extract `label-transition` composite action
+
+A composite action that takes `issue_number`, `remove_labels`, and `add_labels` as inputs and runs the `gh issue edit` commands.
+
+**Pros:**
+- Label transition sequences appear 6–8 times across the workflows
+
+**Cons:**
+- Each transition has slightly different guard conditions (`success()`, `failure()`, specific label combinations). A generic composite action would need to accept these conditions as inputs or be split into several variants — defeating the DRY goal.
+- The label names themselves come from config resolver outputs, which would need to be passed as inputs to the action, adding more boilerplate than it removes.
+- `gh issue edit` is already a one-line call. The "duplication" is in the label name variables, not in complex logic.
+
+**Verdict: Not worth it at this stage.** The real source of verbosity is variable threading from the config resolver, not the `gh` call itself.
+
+---
+
+### Option C — Extract reusable workflow for the config resolution + preflight block
+
+The first 3 steps of dispatch (checkout → resolve config → API key check → config preflight) could become a reusable called workflow.
+
+**Pros:**
+- Reduces the "boilerplate header" of each workflow
+
+**Cons:**
+- Reusable called workflows require `workflow_call` trigger and have significant output-passing overhead. Passing all 17 config outputs back to the caller requires explicit `outputs:` declarations for each field — more boilerplate than the original steps.
+- Adopters running the free kit have the workflows installed as local files. A `workflow_call` reference to the JulesOps source repo creates a remote dependency that breaks offline or air-gapped use and requires separate versioning.
+- The config resolution step is already isolated to a single Python script call. The boilerplate is structural (checkout, resolver call) not logical.
+
+**Verdict: Not worth it.** Reusable workflows impose more ceremony than they remove for this use case.
+
+---
+
+## Decision
+
+**Defer extraction. Do not extract reusable Actions or reusable workflows before Marketplace launch.**
+
+### Rationale
+
+1. **The duplication is shallow.** All three workflows call the same Python script in one line. The actual logic is centralized in `resolve-config.py`, which is the right boundary — not the workflow YAML.
+2. **Extraction adds adopter upgrade complexity.** The free kit's distribution model (install files locally via `-Upgrade`) means any remote action reference is a new versioned dependency adopters must track separately.
+3. **The maintenance cost is low without extraction.** Each workflow is self-contained. Changes to config fields require updating `resolve-config.py` (one file) and possibly the config preflight step (added in v0.3.2). That's two files, not N workflows.
+4. **The right time to extract is post-Marketplace, when the adopter base is established.** At that point, a `uses: mkshp-dev/julesops/.github/actions/...@v2` reference with clear versioning and a documented migration path makes sense.
+
+### Migration path (when extraction is revisited post-Marketplace)
+
+1. Create `actions/resolve-config/action.yml` and `actions/label-transition/action.yml` in the JulesOps repo.
+2. Version the actions alongside the kit (same semver tag).
+3. Update `install-julesops.ps1` to add `actions/` to the installed file set.
+4. Provide a migration note in the CHANGELOG and upgrade guide.
+5. The `-Upgrade` flag handles the file swap in adopting repos.
+
+### Action items
+
+- None before Marketplace launch.
+- Revisit as ADR-001-revision after v1.0 Marketplace listing is live and 3+ external adopters are active.

@@ -1,5 +1,7 @@
 # JulesOps — GitHub Marketplace Listing
 
+![JulesOps](assets/WideBannerLogo.png)
+
 This document contains the copy and pricing summary for the GitHub Marketplace submission.
 
 ---
@@ -102,14 +104,37 @@ The free tier has no usage caps on the workflow kit itself. GitHub Actions usage
 
 ---
 
+## Screenshots
+
+### Issue template — Jules Task form
+![Issue Template](assets/IssueTemplateSS.png)
+
+### Dispatch workflow run — GitHub Actions
+![Dispatch Workflow](assets/DispatchWorkflowSS.png)
+
+### State flow — issue lifecycle after PR merge
+![State Flow](assets/StateFlowSS.png)
+
+---
+
+## Logo assets
+
+| Asset | File | Use |
+|---|---|---|
+| Square mark (512×512) | `docs/assets/logo.png` | Marketplace icon, favicon |
+| Wide banner (1280×640) | `docs/assets/WideBannerLogo.png` | README header, Marketplace hero |
+
+---
+
 ## Marketplace listing checklist
 
-- [ ] Short description ≤ 160 characters
-- [ ] Full description reviewed — no overclaiming of hosted/paid features
-- [ ] Pricing table matches actual free/paid boundary
-- [ ] Privacy policy finalized (`PRIVACY.md`)
-- [ ] Terms of service finalized (`TERMS.md`)
-- [ ] Logo / screenshot assets uploaded
-- [ ] Category tags selected
-- [ ] Support contact confirmed (GitHub Issues)
-- [ ] Security policy URL set (`SECURITY.md`)
+- [x] Short description ≤ 160 characters
+- [x] Full description reviewed — no overclaiming of hosted/paid features
+- [x] Pricing table matches actual free/paid boundary
+- [x] Privacy policy finalized (`PRIVACY.md`)
+- [x] Terms of service finalized (`TERMS.md`)
+- [x] Logo / screenshot assets created and stored in `docs/assets/`
+- [x] Category tags selected
+- [x] Support contact confirmed (GitHub Issues)
+- [x] Security policy URL set (`SECURITY.md`)
+- [x] E2E test proof available — see [`docs/e2e-adoption-test.md`](e2e-adoption-test.md)

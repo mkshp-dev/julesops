@@ -2,14 +2,17 @@ name: Jules Task
 description: Structured implementation task for JulesOps-managed Google Jules work
 title: "[Jules] "
 labels:
-  - jules-queue
-  - status:todo
+  - jules-queue    # auto-applies the dispatch queue label
+  - status:todo    # auto-applies the initial state label
 
 body:
   - type: markdown
     attributes:
       value: |
         Use this template for implementation tasks intended for Google Jules under JulesOps.
+
+        The labels `jules-queue` and `status:todo` are applied automatically when you submit this issue.
+        No manual labeling is required — the dispatch workflow will pick it up on the next run.
 
         Jules should:
         - implement only the scope described here

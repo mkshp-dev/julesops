@@ -1,6 +1,10 @@
 # GitHub App Local Development Guide
 
-This guide describes local setup for the JulesOps GitHub App webhook processing backend. The repository now includes a minimal runnable backend skeleton in `server/`; GitHub App authentication, OAuth, billing, and production persistence are still future work.
+> **Note**: This guide covers the **future JulesOps hosted GitHub App backend** — the control plane with cross-repo visibility, job history, and managed upgrades. It does **not** apply to the free workflow kit (the `workflows/` and `templates/` kit files). If you are installing or running the free kit, see [`docs/install.md`](install.md) instead.
+>
+> The server skeleton lives in `server/`. GitHub App authentication, OAuth, billing, and production persistence are planned future work.
+
+This guide describes local setup for the JulesOps GitHub App webhook processing backend.
 
 ---
 

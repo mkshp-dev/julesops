@@ -46,6 +46,38 @@ jobs:
         env:
           JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
 
+      - name: Validate config preflight (required fields)
+        if: steps.config.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+
+          check_field() {
+            local name="$1" value="$2"
+            if [ -z "$value" ]; then
+              echo "::error::JulesOps config missing required field: $name"
+              failed=1
+            fi
+          }
+
+          check_field "base_branch"         "${{ steps.config.outputs.base_branch }}"
+          check_field "queue_label"         "${{ steps.config.outputs.queue_label }}"
+          check_field "status_todo"         "${{ steps.config.outputs.status_todo }}"
+          check_field "status_in_progress"  "${{ steps.config.outputs.status_in_progress }}"
+          check_field "status_review"       "${{ steps.config.outputs.status_review }}"
+          check_field "status_blocked"      "${{ steps.config.outputs.status_blocked }}"
+          check_field "status_failed"       "${{ steps.config.outputs.status_failed }}"
+          check_field "status_done"         "${{ steps.config.outputs.status_done }}"
+          check_field "core_instructions"   "${{ steps.config.outputs.core_instructions }}"
+          check_field "repo_instructions"   "${{ steps.config.outputs.repo_instructions }}"
+
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::Config preflight failed. Fix .github/julesops.yml and retry."
+            exit 1
+          fi
+          echo "Config preflight passed."
+
       - name: Find active or queued Jules issue
         if: steps.config.outputs.enabled == 'true'
         id: queue
@@ -235,3 +267,37 @@ jobs:
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --remove-label "$STATUS_IN_PROGRESS" || true
           gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_FAILED" || true
           gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" --body "JulesOps failed while dispatching this issue to Jules. Marking it as \`$STATUS_FAILED\` for maintainer review."
+
+      - name: Post dispatch run summary
+        if: steps.config.outputs.enabled == 'true' && always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          HAS_ACTIVE="${{ steps.queue.outputs.has_active }}"
+          HAS_TODO="${{ steps.queue.outputs.has_todo }}"
+          ISSUE_NUMBER="${{ steps.queue.outputs.issue_number }}"
+          ACTIVE_ISSUE="${{ steps.queue.outputs.active_issue }}"
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          if [ "$HAS_ACTIVE" = "true" ]; then
+            echo "### 🟡 JulesOps Dispatch: skipped (issue already active)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Another Jules issue is already active: **#${ACTIVE_ISSUE}**" >> "$GITHUB_STEP_SUMMARY"
+            echo "Dispatch will resume when the active issue moves out of in-progress/review/blocked." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$HAS_TODO" != "true" ]; then
+            echo "### ⚪ JulesOps Dispatch: idle (no queued issues)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "No open issues with the queue label and todo status found." >> "$GITHUB_STEP_SUMMARY"
+          elif [ '${{ job.status }}' = 'success' ]; then
+            echo "### ✅ JulesOps Dispatch: success" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Dispatched Jules to issue **#${ISSUE_NUMBER}** and transitioned it to in-progress." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "[View run](${RUN_URL})" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### ❌ JulesOps Dispatch: failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Dispatch failed for issue **#${ISSUE_NUMBER}**. Issue marked as failed." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "[View run](${RUN_URL})" >> "$GITHUB_STEP_SUMMARY"
+          fi

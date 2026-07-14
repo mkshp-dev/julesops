@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Documentation
+- Added `docs/e2e-adoption-test.md`: full E2E adoption test results for `obsidian-sql-plugin` (kit v0.3.1). All 7 test matrix scenarios passed — happy path and all non-happy-path scenarios. Closes #69.
+- Added `docs/troubleshooting.md`: standalone troubleshooting guide extracted from `docs/install.md` §10 with expanded coverage. Closes #78.
+- Added cross-platform install section to `docs/install.md` (macOS/Linux via PowerShell Core). Closes #79.
+- Added `max_active_jobs` per-repo scope clarification to `docs/repo-config-spec.md`. Closes #87.
+- Updated `docs/release-checklist.md`: updated version example and added doc audit step for E2E test. Closes #88.
+- Updated `docs/app-development.md`: consolidated duplicate content, added clarifying intro note. Closes #72.
+- Updated `docs/marketplace-listing.md`: completed checklist items linked to current kit state and E2E proof. Closes #80.
+- Updated `docs/beta-report.md`: §3.2 label table updated to reflect all 6 repos bootstrapped. §7 E2E summary added. Closes #71, #75.
+- Added `docs/assets/`: logo (square 512×512 + wide 1280×640 banner) and 3 screenshots (issue template, dispatch run, state flow). Wired into `docs/marketplace-listing.md` and `README.md`. Marketplace listing checklist now 100% complete. Closes #82.
+
+### Added
+- `scripts/uninstall-julesops.ps1`: removes all JulesOps-managed files from a target repository. Closes #76.
+- `scripts/test-workflow-logic.ps1`: 30 integration tests across 6 suites covering config resolver output, custom label names, resolver defaults, duplicate install detection, and uninstall behavior. All run without `JULES_API_KEY`. Closes #85.
+- `.github/workflows/ci.yml`: new `workflow-logic-tests` CI job runs `test-workflow-logic.ps1` on every PR. Closes #85.
+- `docs/architecture.md §14`: ADR-001 evaluating reusable GitHub Actions extraction — decision: defer to post-Marketplace with rationale and migration path documented. Closes #84.
+
+### Changed
+- `scripts/install-julesops.ps1`: improved duplicate-install UX — detects prior install, offers interactive `Upgrade existing install? [Y/n]` prompt on TTY, prints clear actionable message on non-TTY. Closes #74.
+- `templates/jules-task.yml`: issue template now auto-applies `jules-queue` and `status:todo` labels. Closes #81.
+- `templates/jules-core.md`: tightened issue-to-PR correlation rules — PR must contain `Closes`, `Fixes`, or `Resolves` + issue number; Jules must not open PRs without a linked issue. Closes #83.
+- `workflows/jules-dispatch.yml`: added post-dispatch run summary comment for observability. Closes #86.
+- `workflows/jules-dispatch.yml`: added config preflight validation step (checks required fields before queue scan). Closes #73.
+- `scripts/validate-kit.ps1`: JULES_API_KEY preflight warning already implemented. Closes #77.
+
 ## [0.3.1] - 2026-07-08
 
 ### Changed

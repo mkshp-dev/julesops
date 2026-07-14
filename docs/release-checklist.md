@@ -78,9 +78,25 @@ Any matches should be historical context only, not current config examples.
 ### 8. Version Audit
 
 ```powershell
-.\scripts\release-kit.ps1 -Version v0.3.1 -Date 2026-07-04
+.\scripts\release-kit.ps1 -Version v0.4.0 -Date 2026-07-15
 ```
 
 - Update the version file at `scripts/kit-version.txt`.
 - Review the generated `CHANGELOG.md` entry before tagging.
 - Verify `git tag --list` contains the intended tag after release.
+
+### 9. Documentation Audit
+
+Before tagging, verify:
+
+- `docs/e2e-adoption-test.md` reflects the current kit version and a recent test run.
+- `docs/beta-report.md` §3.2 label table is current (all repos show ✅).
+- `docs/marketplace-listing.md` checklist has no unchecked items relevant to the current release.
+- `docs/troubleshooting.md` matches the current workflow behavior.
+
+```powershell
+# Quick check: look for stale version references in docs
+rg "v0\.3\.0|v0\.3\.1" docs --include="*.md"
+```
+
+Any matches should be intentional historical references, not stale version examples.

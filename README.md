@@ -1,5 +1,7 @@
 # JulesOps
 
+![JulesOps](docs/assets/WideBannerLogo.png)
+
 JulesOps is a **Jules-specific DevOps layer** for GitHub repositories.
 
 Its goal is to make Google Jules usable as a reliable implementation agent inside real repository workflows by adding:
@@ -59,24 +61,30 @@ See the GitHub issue tracker for the remaining Marketplace and control-plane wor
 julesops/
 ├─ README.md
 ├─ docs/
+│  ├─ assets/                   # logo and screenshot assets
+│  │  ├─ logo.png
+│  │  ├─ WideBannerLogo.png
+│  │  ├─ IssueTemplateSS.png
+│  │  ├─ DispatchWorkflowSS.png
+│  │  └─ StateFlowSS.png
 │  ├─ app-development.md
 │  ├─ architecture.md
 │  ├─ beta-report.md
 │  ├─ deployment.md
+│  ├─ e2e-adoption-test.md
 │  ├─ install.md
-│  ├─ local-webhook-dev.md
 │  ├─ marketplace-listing.md
-│  ├─ ops-monitoring.md
-│  ├─ product.md
-│  ├─ public-docs.md
 │  ├─ release-checklist.md
 │  ├─ repo-config-spec.md
 │  ├─ state-machine.md
+│  ├─ troubleshooting.md
 │  └─ support-runbook.md
 ├─ scripts/
+│  ├─ bootstrap-labels.ps1
 │  ├─ install-julesops.ps1
+│  ├─ uninstall-julesops.ps1
 │  └─ validate-kit.ps1
-├─ server/                 # hosted control-plane skeleton
+├─ server/                   # hosted control-plane skeleton
 ├─ templates/
 │  ├─ jules-core.md
 │  ├─ jules-task.yml
@@ -106,6 +114,13 @@ Then, in the target repository:
 4. Create a Jules task issue and run `Jules Dispatch` manually.
 
 See [docs/install.md](docs/install.md) for the full install guide.
+
+## How it looks
+
+| Issue template | Dispatch run | State flow |
+|---|---|---|
+| ![Issue template](docs/assets/IssueTemplateSS.png) | ![Dispatch workflow](docs/assets/DispatchWorkflowSS.png) | ![State flow](docs/assets/StateFlowSS.png) |
+
 
 ## What lives where
 

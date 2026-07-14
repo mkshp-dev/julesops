@@ -26,6 +26,19 @@ jobs:
       - name: Run retry command parser tests
         shell: bash
         run: node scripts/__tests__/comment-command.test.js
+
+  workflow-logic-tests:
+    name: Workflow logic integration tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run workflow logic tests
+        shell: pwsh
+        run: .\scripts\test-workflow-logic.ps1
+
   validate-server:
     name: Validate hosted server skeleton
     runs-on: windows-latest

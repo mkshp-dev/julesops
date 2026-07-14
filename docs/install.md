@@ -34,20 +34,41 @@ A JulesOps-managed repository contains:
 
 From the JulesOps repository:
 
+**Windows (PowerShell 5.1+)**
+
 ```powershell
 .\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\target-repo" -BaseBranch main
 ```
 
-Useful options:
+**macOS / Linux (PowerShell Core 7+)**
+
+Install PowerShell Core if not already available:
+
+```bash
+# macOS
+brew install --cask powershell
+
+# Ubuntu/Debian
+sudo apt-get install -y powershell
+```
+
+Then run:
+
+```bash
+pwsh ./scripts/install-julesops.ps1 -TargetRepo "/path/to/target-repo" -BaseBranch main
+```
+
+Useful options (all platforms):
 
 ```powershell
 .\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\target-repo" -BaseBranch Dev -QueueLabel jules-queue
 .\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\target-repo" -Force
+.\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\target-repo" -Upgrade
 ```
 
 The installer copies the canonical files from `templates/` and `workflows/`, creates `.github/jules-repo.md` if missing, and customizes the base branch / queue label in `.github/julesops.yml`.
 
-The installer refuses to overwrite existing installed files unless `-Force` is provided.
+If a prior JulesOps install is detected, the installer will prompt you to upgrade (TTY) or print an actionable message (non-TTY) instead of failing with a cryptic error.
 
 ---
 
@@ -233,42 +254,12 @@ Expected flow:
 
 # 10. Troubleshooting
 
-## Issue never dispatches
+For a full troubleshooting reference, see [`docs/troubleshooting.md`](troubleshooting.md).
 
-Check:
+**Quick checklist:**
 
-- the issue has the queue label and todo label expected by `julesops.yml`
-- `Jules Dispatch` is enabled and ran successfully
-- no other issue is already active in `in-progress`, `review`, or `blocked`
-
-## Issue dispatches but never moves to review
-
-Check:
-
-- Jules actually opened a PR
-- the PR body contains a linked issue reference such as `Resolves #123`
-- the PR targets the expected base branch
-
-## Issue gets stuck in review after merge
-
-Check:
-
-- the PR was merged rather than closed unmerged
-- the PR body linked the correct issue
-- `Jules State Sync` ran on the PR closed event
-
-## Watchdog is posting reminders too aggressively
-
-Check:
-
-- the `watchdog` thresholds in `.github/julesops.yml`
-- whether normal issue / PR activity is actually happening in GitHub
-- whether you want longer thresholds for slower review cycles
-
-## Dispatch fails immediately
-
-Check:
-
-- `JULES_API_KEY` exists
-- `.github/julesops.yml` is valid YAML
-- the instruction file paths in the config exist
+- Issue never dispatches → check it has both `jules-queue` + `status:todo` labels, and no other issue is active.
+- Dispatch fails → check `JULES_API_KEY` secret is set and `.github/julesops.yml` is valid.
+- Issue stuck in review after merge → ensure PR body contains `Closes #N` / `Fixes #N` / `Resolves #N`.
+- Watchdog too noisy → increase `stale_in_progress_hours` / `stale_review_hours` in config.
+- Labels missing → run `bootstrap-labels.ps1 -TargetRepo` to create them.

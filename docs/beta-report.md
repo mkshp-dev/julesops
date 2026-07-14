@@ -72,11 +72,12 @@ The original 4 repos passed **file-level and config-level validation** but faile
 `obsidian-sql-plugin` passes **all validation checks** including remote label validation — labels were created by the integrated bootstrap during install.
 
 | Repo | Files OK | Config OK | Branch OK | Labels OK |
-|---|---|---|---|---|
-| `obsidian-plugin-template` | ✅ | ✅ | ✅ | ❌ (not yet bootstrapped) |
-| `obsidian-MOC-plugin` | ✅ | ✅ | ✅ | ❌ (partial — `status:failed` missing) |
-| `pomoTomato` | ✅ | ✅ | ✅ | ❌ (partial — `status:failed` missing) |
-| `poker-anki` | ✅ | ✅ | ✅ | ❌ (not yet bootstrapped) |
+|---|---|---|---|
+---|
+| `obsidian-plugin-template` | ✅ | ✅ | ✅ | ✅ (bootstrapped — issue #71) |
+| `obsidian-MOC-plugin` | ✅ | ✅ | ✅ | ✅ (bootstrapped — issue #71) |
+| `pomoTomato` | ✅ | ✅ | ✅ | ✅ (bootstrapped — issue #71) |
+| `poker-anki` | ✅ | ✅ | ✅ | ✅ (bootstrapped — issue #71) |
 | `obsidian-sql-plugin` | ✅ | ✅ | ✅ | ✅ (bootstrapped by installer) |
 
 ### 3.3 Label bootstrap
@@ -134,3 +135,14 @@ All config fields parsed identically across repos. The resolver defaults are sen
 | Config contract validated | ✅ 17/17 fields resolve correctly |
 | Breaking changes | None identified |
 | Integrated label bootstrap validated | ✅ `obsidian-sql-plugin` — labels created + idempotent upgrade confirmed |
+| All 6 repos label-validated | ✅ Bootstrapped (issue #71) |
+
+---
+
+## 7. End-to-End Adoption Test
+
+**Date**: 2026-07-15 — **Result: ✅ PASS**
+
+A full E2E adoption test was conducted in `mkshp-dev/obsidian-sql-plugin` (kit v0.3.1, `Dev` branch). All 7 test matrix scenarios passed — including the complete happy path (todo → in-progress → review → done) and all non-happy-path scenarios (missing API key, wrong base branch, blocked comment, `/jules retry`).
+
+See [`docs/e2e-adoption-test.md`](e2e-adoption-test.md) for full pass/fail results.

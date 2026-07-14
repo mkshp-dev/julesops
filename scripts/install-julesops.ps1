@@ -17,6 +17,65 @@ $kitRoot = Split-Path -Parent $scriptRoot
 $KitVersion = (Get-Content -LiteralPath (Join-Path $scriptRoot "kit-version.txt") -Raw).Trim()
 $targetRoot = [System.IO.Path]::GetFullPath($TargetRepo)
 
+# --- Detect prior JulesOps install and handle duplicate-install UX ---
+if (-not $Force -and -not $Upgrade -and -not $DryRun) {
+  $managedFiles = @(
+    ".github/jules-core.md",
+    ".github/julesops.yml",
+    ".github/resolve-config.py",
+    ".github/ISSUE_TEMPLATE/jules-task.yml",
+    ".github/workflows/jules-dispatch.yml",
+    ".github/workflows/jules-state-sync.yml",
+    ".github/workflows/jules-watchdog.yml"
+  )
+  $priorInstallDetected = $false
+  $installedVersion = $null
+  foreach ($f in $managedFiles) {
+    $fullPath = Join-Path $targetRoot $f
+    if (Test-Path -LiteralPath $fullPath) {
+      $content = Get-Content -LiteralPath $fullPath -Raw -ErrorAction SilentlyContinue
+      if ($content -match 'JulesOps kit version:\s*([^\s\-\-\>]+)') {
+        $priorInstallDetected = $true
+        $installedVersion = $Matches[1]
+        break
+      }
+    }
+  }
+
+  if ($priorInstallDetected) {
+    Write-Host ""
+    Write-Host "========================================================================"
+    Write-Host "  Prior JulesOps install detected (version: $installedVersion)"
+    Write-Host "========================================================================"
+    Write-Host ""
+    Write-Host "  Target: $targetRoot"
+    Write-Host ""
+    Write-Host "  Options:"
+    Write-Host "    -Upgrade   Refresh managed files, preserve julesops.yml + jules-repo.md"
+    Write-Host "    -Force     Overwrite all managed files including julesops.yml"
+    Write-Host ""
+
+    # Offer interactive prompt only when stdin is a real TTY
+    $isTTY = [System.Console]::IsInputRedirected -eq $false
+    if ($isTTY) {
+      Write-Host "  Upgrade existing install? [Y/n]: " -NoNewline
+      $answer = Read-Host
+      if ($answer -eq '' -or $answer -match '^[Yy]') {
+        Write-Host "  Running upgrade..."
+        Write-Host ""
+        $Upgrade = $true
+      } else {
+        Write-Host "  Aborted. Re-run with -Upgrade or -Force when ready."
+        exit 0
+      }
+    } else {
+      Write-Host "  Non-interactive shell detected. Re-run with -Upgrade or -Force."
+      Write-Host "========================================================================"
+      exit 1
+    }
+  }
+}
+
 $files = @(
   @{ Source = "templates/jules-core.md"; Target = ".github/jules-core.md" },
   @{ Source = "templates/jules-task.yml"; Target = ".github/ISSUE_TEMPLATE/jules-task.yml" },
