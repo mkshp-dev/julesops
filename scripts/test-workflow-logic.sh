@@ -51,9 +51,10 @@ new_test_repo() {
   printf '%s\n' "$target"
 }
 
-# Print the resolver's value for KEY in REPO.
+# Print the resolver's value for KEY in REPO. GITHUB_OUTPUT is cleared because the
+# resolver writes there instead of stdout when it is set (as it is on Actions runners).
 resolved() {
-  (cd "$1" && python3 .github/resolve-config.py) | awk -v k="$2" 'index($0, k "=") == 1 { print substr($0, length(k) + 2); exit }'
+  (cd "$1" && GITHUB_OUTPUT="" python3 .github/resolve-config.py) | awk -v k="$2" 'index($0, k "=") == 1 { print substr($0, length(k) + 2); exit }'
 }
 
 echo

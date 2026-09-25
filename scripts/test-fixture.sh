@@ -33,7 +33,7 @@ echo "  Dry-run install did not write files."
 
 "$scripts/install-julesops.sh" --base-branch main "$target"
 "$scripts/validate-kit.sh" "$target"
-(cd "$target" && python3 .github/resolve-config.py)
+(cd "$target" && GITHUB_OUTPUT="" python3 .github/resolve-config.py)  # print to stdout, not the job output
 "$scripts/bootstrap-labels.sh" --dry-run "$target"
 
 config_path="$target/$JULESOPS_CONFIG_FILE"
