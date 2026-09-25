@@ -155,6 +155,12 @@ if grep -qE 'import[[:space:]]+yaml|from[[:space:]]+yaml[[:space:]]+import' "$JU
   die "Resolver must not depend on PyYAML or undeclared YAML packages."
 fi
 
+# GitHub evaluates every ${{ }} in action.yml (even inside run: strings), and composite
+# actions have no secrets context, so a secrets reference stops the action from loading.
+if grep -nE '\$\{\{[^}]*secrets\.' "$JULESOPS_KIT_ROOT/action.yml"; then
+  die "action.yml must not reference the secrets context; pass secrets in through inputs."
+fi
+
 # Kit workflows are thin wrappers: each must call the action pinned to this kit version.
 assert_action_ref() {
   local workflow="$1" refs

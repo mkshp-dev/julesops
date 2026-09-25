@@ -120,7 +120,7 @@ runs:
         JULES_API_KEY: ${{ inputs.jules-api-key }}
       run: |
         if [ -z "$JULES_API_KEY" ]; then
-          echo "::error::The jules-api-key input is empty. Add a JULES_API_KEY secret at https://github.com/$GITHUB_REPOSITORY/settings/secrets/actions (get a key at https://jules.google.com/settings/api) and pass it with 'jules-api-key: \${{ secrets.JULES_API_KEY }}'."
+          echo "::error::The jules-api-key input is empty. Add a JULES_API_KEY secret at https://github.com/$GITHUB_REPOSITORY/settings/secrets/actions (get a key at https://jules.google.com/settings/api) and pass that secret to this action's jules-api-key input."
           exit 1
         fi
 
