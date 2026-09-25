@@ -159,7 +159,9 @@ runs:
         ISSUE: ${{ steps.select.outputs.issue_number }}
       run: |
         source "$JULESOPS_ACTION_PATH/src/lib.sh"
-        comment_issue "$ISSUE" "Jules has been successfully dispatched to work on this issue. Status is now \`$JULESOPS_STATUS_IN_PROGRESS\`."
+        comment_issue "$ISSUE" "$LEGACY_DISPATCH_TEXT Status is now \`$JULESOPS_STATUS_IN_PROGRESS\`.
+
+        $DISPATCH_MARKER"
 
     - name: Mark issue failed
       if: failure() && steps.select.outputs.has_todo == 'true' && inputs.dry-run != 'true'

@@ -11,6 +11,17 @@ set -euo pipefail
 REPO="$GITHUB_REPOSITORY"
 DRY_RUN="${JULESOPS_DRY_RUN:-false}"
 
+# Hidden marker on the comment posted after each dispatch; attempts are counted from it.
+# Comments from kits before the marker existed are recognized by their fixed text.
+DISPATCH_MARKER='<!-- julesops:dispatched -->'
+LEGACY_DISPATCH_TEXT='Jules has been successfully dispatched to work on this issue.'
+
+# Print how many times the issue has been dispatched to Jules.
+dispatch_count() {
+  gh api "repos/$REPO/issues/$1/comments" --paginate --jq '.[].body' |
+    grep -cF -e "$DISPATCH_MARKER" -e "$LEGACY_DISPATCH_TEXT" || true
+}
+
 # The six status labels, one per line.
 status_labels() {
   printf '%s\n' "$JULESOPS_STATUS_TODO" "$JULESOPS_STATUS_IN_PROGRESS" "$JULESOPS_STATUS_REVIEW" \

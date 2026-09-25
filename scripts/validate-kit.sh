@@ -17,6 +17,7 @@ assert_file() {
 }
 
 is_bool() { [ "$1" = "true" ] || [ "$1" = "false" ]; }
+is_non_negative_int() { printf '%s' "$1" | grep -E '^[0-9]+$' > /dev/null; }
 is_positive_int() { printf '%s' "$1" | grep -E '^[0-9]+$' > /dev/null && [ "$1" -ge 1 ]; }
 
 # Validate a julesops.yml. With a repo root, also check files, branch, labels, and secret.
@@ -37,6 +38,13 @@ validate_config() {
 
   value="$(get julesops.queue.max_active_jobs)"
   is_positive_int "$value" || die "Invalid 'julesops.queue.max_active_jobs' in config: '$value'. Must be a positive integer."
+
+  value="$(get julesops.queue.blocked_holds_queue)"
+  [ -z "$value" ] || is_bool "$value" || die "Invalid 'julesops.queue.blocked_holds_queue' in config: '$value'. Must be true or false."
+  value="$(get julesops.queue.max_attempts)"
+  [ -z "$value" ] || is_non_negative_int "$value" || die "Invalid 'julesops.queue.max_attempts' in config: '$value'. Must be 0 (no limit) or a positive integer."
+  value="$(get julesops.watchdog.fail_in_progress_hours)"
+  [ -z "$value" ] || is_non_negative_int "$value" || die "Invalid 'julesops.watchdog.fail_in_progress_hours' in config: '$value'. Must be 0 (never) or a positive integer."
 
   local state
   for state in todo in_progress review blocked failed "done"; do

@@ -53,6 +53,19 @@ if ! is_maintainer "$association"; then
   exit 0
 fi
 
+# Cap automatic retries so a task that keeps failing doesn't loop; --force goes past the cap.
+max_attempts="${JULESOPS_MAX_ATTEMPTS:-3}"
+if [ "$max_attempts" -gt 0 ] && [[ "$command" != *"--force" ]]; then
+  attempts="$(dispatch_count "$issue_number")"
+  if [ "$attempts" -ge "$max_attempts" ]; then
+    echo "Issue #$issue_number has been dispatched $attempts times (limit $max_attempts); not requeueing."
+    comment_issue "$issue_number" "This issue has already been dispatched to Jules **$attempts** times (limit: $max_attempts), so JulesOps did not requeue it. Retrying the same task again usually fails the same way.
+
+Consider clarifying the issue first: what went wrong, missing details, or a smaller scope. Then comment \`/jules $command --force\` to dispatch it anyway."
+    exit 0
+  fi
+fi
+
 set_status "$issue_number" "$JULESOPS_STATUS_TODO"
 comment_issue "$issue_number" "Issue requeued by @$commenter. Triggering Jules Dispatch..."
 

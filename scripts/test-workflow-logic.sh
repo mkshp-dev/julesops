@@ -128,6 +128,9 @@ close_on_merge=true
 stale_in_progress_hours=24
 stale_review_hours=72
 jules_authors=google-labs-jules[bot]
+blocked_holds_queue=false
+max_attempts=3
+fail_in_progress_hours=72
 EOF
 
 echo

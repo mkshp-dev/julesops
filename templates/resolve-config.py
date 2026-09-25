@@ -106,6 +106,8 @@ def main():
         "enabled": as_bool_text(nested(cfg, ["enabled"], True), True),
         "base_branch": nested(cfg, ["repository", "base_branch"], "main"),
         "queue_label": nested(cfg, ["queue", "queue_label"], "jules-queue"),
+        "blocked_holds_queue": as_bool_text(nested(cfg, ["queue", "blocked_holds_queue"], False), False),
+        "max_attempts": str(nested(cfg, ["queue", "max_attempts"], 3)),
         "status_todo": nested(cfg, ["states", "todo"], "status:todo"),
         "status_in_progress": nested(cfg, ["states", "in_progress"], "status:in-progress"),
         "status_review": nested(cfg, ["states", "review"], "status:review"),
@@ -121,6 +123,7 @@ def main():
         "blocked_marker": nested(cfg, ["blocked_comment", "marker"], "## Blocked"),
         "stale_in_progress_hours": str(nested(cfg, ["watchdog", "stale_in_progress_hours"], 24)),
         "stale_review_hours": str(nested(cfg, ["watchdog", "stale_review_hours"], 72)),
+        "fail_in_progress_hours": str(nested(cfg, ["watchdog", "fail_in_progress_hours"], 72)),
     }
 
     # With JULESOPS_EXPORT_ENV=true, also expose every value to later steps as JULESOPS_<KEY>.
