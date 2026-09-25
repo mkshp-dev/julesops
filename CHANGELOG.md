@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-25
+
 ### Fixed
 - `/jules retry` and `/jules requeue` failed in installed repositories because `jules-state-sync.yml` ran `scripts/comment-command.js`, which the installer never copied. The parser now ships as `.github/jules-comment-command.js`, and `validate-kit.sh` checks that every script a workflow executes is installed.
 - `require_issue_link` posted a validation warning on every human-authored pull request. It now applies only to pull requests created by Jules: a commit authored by a `pull_request.jules_authors` login (default `google-labs-jules[bot]`) or a Jules task link in the body. The PR author is not used, because Jules opens PRs under the account of the user who started the task.
