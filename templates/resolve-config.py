@@ -1,6 +1,8 @@
 import os
 
 CONFIG_PATH = ".github/julesops.yml"
+# GitHub login(s) that open PRs and post comments on behalf of Jules (comma-separated).
+DEFAULT_JULES_AUTHORS = "google-labs-jules[bot]"
 
 
 def parse_scalar(raw_value):
@@ -112,6 +114,7 @@ def main():
         "repo_instructions": nested(cfg, ["instructions", "repo"], ".github/jules-repo.md"),
         "target_base_branch_only": as_bool_text(nested(cfg, ["pull_request", "target_base_branch_only"], False), False),
         "require_issue_link": as_bool_text(nested(cfg, ["pull_request", "require_issue_link"], False), False),
+        "jules_authors": nested(cfg, ["pull_request", "jules_authors"], DEFAULT_JULES_AUTHORS),
         "close_on_merge": as_bool_text(nested(cfg, ["issue_completion", "close_on_merge"], True), True),
         "blocked_marker": nested(cfg, ["blocked_comment", "marker"], "## Blocked"),
         "stale_in_progress_hours": str(nested(cfg, ["watchdog", "stale_in_progress_hours"], 24)),

@@ -277,6 +277,7 @@ $kitFiles = @(
   "templates/jules-task.yml",
   "templates/julesops.yml",
   "templates/resolve-config.py",
+  "templates/comment-command.js",
   "workflows/jules-dispatch.yml",
   "workflows/jules-state-sync.yml",
   "workflows/jules-watchdog.yml",
@@ -298,6 +299,16 @@ Validate-JulesOpsConfig (Join-Path $kitRoot "templates/julesops.yml") $null
 
 Assert-Contains (Join-Path $kitRoot "workflows/jules-dispatch.yml") "jules_api_key:\s*\$\{\{\s*secrets\.JULES_API_KEY\s*\}\}" "Dispatch workflow must pass the JULES_API_KEY secret to Jules."
 Assert-Contains (Join-Path $kitRoot "workflows/jules-watchdog.yml") "JulesOps Watchdog" "Watchdog workflow must include the watchdog comment marker."
+# Every script a workflow executes must ship with the kit (installed under .github/).
+$workflowScriptRefs = Get-ChildItem -LiteralPath (Join-Path $kitRoot "workflows") -Filter *.yml |
+  Select-String -Pattern '(?:node|python3?)\s+(\S+\.(?:js|py))' -AllMatches |
+  ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
+foreach ($ref in $workflowScriptRefs) {
+  if ($ref -notmatch '^\.github/') {
+    throw "Workflow references '$ref', which is not installed by the kit. Workflow scripts must live under .github/."
+  }
+}
+
 Assert-NotContains (Join-Path $kitRoot "templates/resolve-config.py") "import\s+yaml|from\s+yaml\s+import" "Resolver must not depend on PyYAML or undeclared YAML packages."
 
 if ($TargetRepo) {
@@ -307,6 +318,7 @@ if ($TargetRepo) {
     ".github/jules-repo.md",
     ".github/julesops.yml",
     ".github/resolve-config.py",
+    ".github/jules-comment-command.js",
     ".github/ISSUE_TEMPLATE/jules-task.yml",
     ".github/workflows/jules-dispatch.yml",
     ".github/workflows/jules-state-sync.yml",
@@ -317,6 +329,10 @@ if ($TargetRepo) {
     Assert-File (Join-Path $targetRoot $file) "Missing installed JulesOps file in target repo: $file"
   }
 
+  foreach ($ref in $workflowScriptRefs) {
+    Assert-File (Join-Path $targetRoot $ref) "Installed workflows execute '$ref', but it is missing from the target repo."
+  }
+
   Validate-JulesOpsConfig (Join-Path $targetRoot ".github/julesops.yml") $targetRoot
 
   # Verify version markers exist in all fully kit-managed installed files
@@ -324,6 +340,7 @@ if ($TargetRepo) {
     ".github/jules-core.md",
     ".github/julesops.yml",
     ".github/resolve-config.py",
+    ".github/jules-comment-command.js",
     ".github/ISSUE_TEMPLATE/jules-task.yml",
     ".github/workflows/jules-dispatch.yml",
     ".github/workflows/jules-state-sync.yml",

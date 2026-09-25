@@ -10,6 +10,12 @@ permissions:
   issues: write
   pull-requests: read
 
+# Serialize dispatch runs (schedule, manual, and retry-triggered) so two runs
+# can never select and invoke the same queued issue concurrently.
+concurrency:
+  group: julesops-dispatch
+  cancel-in-progress: false
+
 env:
   GH_TOKEN: ${{ github.token }}
   JULESOPS_CONFIG_PATH: .github/julesops.yml
@@ -197,6 +203,29 @@ jobs:
 
           echo "issue_url=$(jq -r '.url' issue.json)" >> "$GITHUB_OUTPUT"
 
+      - name: Claim issue by marking it in-progress
+        if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ISSUE_NUMBER="${{ steps.queue.outputs.issue_number }}"
+          STATUS_TODO="${{ steps.config.outputs.status_todo }}"
+          STATUS_IN_PROGRESS="${{ steps.config.outputs.status_in_progress }}"
+          STATUS_REVIEW="${{ steps.config.outputs.status_review }}"
+          STATUS_BLOCKED="${{ steps.config.outputs.status_blocked }}"
+          STATUS_FAILED="${{ steps.config.outputs.status_failed }}"
+          STATUS_DONE="${{ steps.config.outputs.status_done }}"
+
+          # Claim before invoking Jules so any later run sees this issue as active.
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" \
+            --remove-label "$STATUS_TODO" \
+            --remove-label "$STATUS_REVIEW" \
+            --remove-label "$STATUS_BLOCKED" \
+            --remove-label "$STATUS_FAILED" \
+            --remove-label "$STATUS_DONE" || true
+          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_IN_PROGRESS"
+
       - name: Invoke Jules for selected issue
         if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true'
         uses: google-labs-code/jules-invoke@v1.0.0
@@ -229,28 +258,16 @@ jobs:
             Issue body:
             ${{ steps.issue.outputs.issue_body }}
 
-      - name: Mark issue as in-progress
+      - name: Confirm dispatch on the issue
         if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true' && success()
         shell: bash
         run: |
           set -euo pipefail
 
           ISSUE_NUMBER="${{ steps.queue.outputs.issue_number }}"
-          STATUS_TODO="${{ steps.config.outputs.status_todo }}"
           STATUS_IN_PROGRESS="${{ steps.config.outputs.status_in_progress }}"
-          STATUS_REVIEW="${{ steps.config.outputs.status_review }}"
-          STATUS_BLOCKED="${{ steps.config.outputs.status_blocked }}"
-          STATUS_FAILED="${{ steps.config.outputs.status_failed }}"
-          STATUS_DONE="${{ steps.config.outputs.status_done }}"
 
-          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" \
-            --remove-label "$STATUS_TODO" \
-            --remove-label "$STATUS_REVIEW" \
-            --remove-label "$STATUS_BLOCKED" \
-            --remove-label "$STATUS_FAILED" \
-            --remove-label "$STATUS_DONE" || true
-          gh issue edit "$ISSUE_NUMBER" --repo "${{ github.repository }}" --add-label "$STATUS_IN_PROGRESS"
-          gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" --body "Jules has been successfully dispatched to work on this issue. Transitioning status to \`$STATUS_IN_PROGRESS\`."
+          gh issue comment "$ISSUE_NUMBER" --repo "${{ github.repository }}" --body "Jules has been successfully dispatched to work on this issue. Status is now \`$STATUS_IN_PROGRESS\`."
 
       - name: Mark issue failed if dispatch or invocation failed
         if: steps.config.outputs.enabled == 'true' && steps.queue.outputs.has_active != 'true' && steps.queue.outputs.has_todo == 'true' && failure()

@@ -26,6 +26,7 @@ $targetRoot = [System.IO.Path]::GetFullPath($TargetRepo)
 $managedFiles = @(
   ".github/jules-core.md",
   ".github/resolve-config.py",
+  ".github/jules-comment-command.js",
   ".github/ISSUE_TEMPLATE/jules-task.yml",
   ".github/workflows/jules-dispatch.yml",
   ".github/workflows/jules-state-sync.yml",

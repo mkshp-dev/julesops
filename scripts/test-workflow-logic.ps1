@@ -82,7 +82,8 @@ $suite1Tests = @(
   @{ Key = "status_done";         Expected = "status:done" },
   @{ Key = "core_instructions";   Expected = ".github/jules-core.md" },
   @{ Key = "repo_instructions";   Expected = ".github/jules-repo.md" },
-  @{ Key = "close_on_merge";      Expected = "true" }
+  @{ Key = "close_on_merge";      Expected = "true" },
+  @{ Key = "jules_authors";       Expected = "google-labs-jules[bot]" }
 )
 
 foreach ($t in $suite1Tests) {
@@ -92,6 +93,14 @@ foreach ($t in $suite1Tests) {
   } else {
     Fail "resolver: $($t.Key)" "Expected '$($t.Expected)', got '$actual'"
   }
+}
+
+# The state-sync workflow pipes comments through the installed parser; it must run from .github/.
+$parsed = "/jules retry" | node (Join-Path $repo1 ".github/jules-comment-command.js")
+if ($parsed -eq "retry") {
+  Pass "installed comment parser: '/jules retry' -> 'retry'"
+} else {
+  Fail "installed comment parser" "Expected 'retry', got '$parsed'"
 }
 
 # ─── Suite 2: Non-default base branch resolution ────────────────────────────
@@ -231,6 +240,7 @@ foreach ($f in $managedAfterInstall) {
 $managed = @(
   ".github\jules-core.md",
   ".github\resolve-config.py",
+  ".github\jules-comment-command.js",
   ".github\ISSUE_TEMPLATE\jules-task.yml",
   ".github\workflows\jules-dispatch.yml",
   ".github\workflows\jules-state-sync.yml",

@@ -85,6 +85,10 @@ When `Jules State Sync` sees that marker on an in-progress issue, it should move
 in_progress → blocked
 ```
 
+The marker is only honored when the comment author is a bot account (Jules), a login listed in
+`pull_request.jules_authors`, or a maintainer (`OWNER`, `MEMBER`, `COLLABORATOR`). Markers posted by
+anyone else are ignored so that outside commenters cannot stall the queue.
+
 ## PR closed without merge
 If Jules opens a PR but it is closed without merge, the issue should move to:
 

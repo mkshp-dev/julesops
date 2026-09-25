@@ -23,6 +23,7 @@ if (-not $Force -and -not $Upgrade -and -not $DryRun) {
     ".github/jules-core.md",
     ".github/julesops.yml",
     ".github/resolve-config.py",
+    ".github/jules-comment-command.js",
     ".github/ISSUE_TEMPLATE/jules-task.yml",
     ".github/workflows/jules-dispatch.yml",
     ".github/workflows/jules-state-sync.yml",
@@ -81,6 +82,7 @@ $files = @(
   @{ Source = "templates/jules-task.yml"; Target = ".github/ISSUE_TEMPLATE/jules-task.yml" },
   @{ Source = "templates/julesops.yml"; Target = ".github/julesops.yml" },
   @{ Source = "templates/resolve-config.py"; Target = ".github/resolve-config.py" },
+  @{ Source = "templates/comment-command.js"; Target = ".github/jules-comment-command.js" },
   @{ Source = "workflows/jules-dispatch.yml"; Target = ".github/workflows/jules-dispatch.yml" },
   @{ Source = "workflows/jules-state-sync.yml"; Target = ".github/workflows/jules-state-sync.yml" },
   @{ Source = "workflows/jules-watchdog.yml"; Target = ".github/workflows/jules-watchdog.yml" }
@@ -140,6 +142,8 @@ foreach ($file in $files) {
       $marker = "<!-- JulesOps kit version: $KitVersion -->`r`n"
     } elseif ($ext -eq ".yml" -or $ext -eq ".yaml" -or $ext -eq ".py") {
       $marker = "# JulesOps kit version: $KitVersion`r`n"
+    } elseif ($ext -eq ".js") {
+      $marker = "// JulesOps kit version: $KitVersion`r`n"
     }
 
     Set-Content -LiteralPath $target -Value ($marker + $content) -NoNewline

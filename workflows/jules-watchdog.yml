@@ -90,7 +90,7 @@ jobs:
                       comment_body = (
                           f"## JulesOps Watchdog\n\n"
                           f"Watchdog detected that a linked pull request (#{pr['number']}) is already open, "
-                          f"but this issue was in **in-progress**. Automatically transitioning status to \`{status_review}\`."
+                          f"but this issue was in **in-progress**. Automatically transitioning status to `{status_review}`."
                       )
                       subprocess.run([
                           'gh', 'issue', 'comment', str(issue_num),

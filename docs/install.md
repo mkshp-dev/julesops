@@ -99,6 +99,8 @@ From `templates/`:
 - `templates/jules-core.md` → `.github/jules-core.md`
 - `templates/jules-task.yml` → `.github/ISSUE_TEMPLATE/jules-task.yml`
 - `templates/julesops.yml` → `.github/julesops.yml` and then customize it
+- `templates/resolve-config.py` → `.github/resolve-config.py`
+- `templates/comment-command.js` → `.github/jules-comment-command.js`
 
 From `workflows/`:
 

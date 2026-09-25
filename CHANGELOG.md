@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `/jules retry` and `/jules requeue` failed in installed repositories because `jules-state-sync.yml` ran `scripts/comment-command.js`, which the installer never copied. The parser now ships as `.github/jules-comment-command.js`, and `validate-kit.ps1` checks that every script a workflow executes is installed.
+- `require_issue_link` posted a validation warning on every human-authored pull request. It now applies only to pull requests opened by `pull_request.jules_authors` (default `google-labs-jules[bot]`).
+- Any commenter could move an in-progress issue to `blocked` by posting the blocked marker. The marker is now honored only from bot accounts, `jules_authors`, or maintainers.
+- Overlapping `Jules Dispatch` runs could invoke Jules twice for the same issue. Dispatch now uses a `concurrency` group and claims the issue (`status:in-progress`) before invoking Jules.
+- Watchdog review-transition comments rendered a stray backslash (`` \`status:review\` ``).
+
+### Added
+- `pull_request.jules_authors` config field.
+
+### Documentation
+- `README.md` no longer advertises a non-functional `uses: mkshp-dev/julesops@v1` step; Quick Start now describes the installer flow and the installed file layout.
+- `docs/install.md` manual install now lists `resolve-config.py` and `jules-comment-command.js`.
+
 ## [0.4.0] - 2026-07-15
 
 ### Documentation
