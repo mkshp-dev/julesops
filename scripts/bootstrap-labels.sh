@@ -75,7 +75,7 @@ echo "Checking existing remote GitHub labels for repository '$repo_name'..."
 existing="$(gh label list --repo "$repo_name" --limit 1000 --json name --jq '.[].name')"
 
 printf '%s' "$labels" | while IFS='|' read -r name color description; do
-  if printf '%s\n' "$existing" | grep -qxF -- "$name"; then
+  if printf '%s\n' "$existing" | grep -xF -- "$name" > /dev/null; then
     echo "  Label '$name' already exists."
     continue
   fi

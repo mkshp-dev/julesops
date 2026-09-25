@@ -129,6 +129,15 @@ for entry in "${JULESOPS_MANAGED_FILES[@]}"; do
   if [ "$relative_target" = "$JULESOPS_CONFIG_FILE" ]; then wrote_config=true; fi
 done
 
+# --- Remove files earlier kit versions installed but the workflows no longer use ---
+for legacy in "${JULESOPS_LEGACY_FILES[@]}"; do
+  legacy_path="$target_root/$legacy"
+  if [ -n "$(installed_version "$legacy_path")" ]; then
+    log "Removing no-longer-used kit file: $legacy"
+    if ! $dry_run; then rm -f "$legacy_path"; fi
+  fi
+done
+
 # --- Customize a freshly written config ---
 if $wrote_config; then
   if $dry_run; then

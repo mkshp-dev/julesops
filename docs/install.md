@@ -1,6 +1,13 @@
 # Install JulesOps in a repository
 
-This guide describes how to install the **JulesOps workflow kit** into a repository that wants to use Google Jules as a controlled implementation agent.
+This guide describes how to set up JulesOps in a repository that wants to use Google Jules as a controlled implementation agent.
+
+There are two ways:
+
+- **The action only** (quickest): add one workflow file that uses `mkshp-dev/julesops`, plus a `JULES_API_KEY` secret. No config file is needed. Copy [`examples/julesops-workflow.yml`](../examples/julesops-workflow.yml) to `.github/workflows/julesops.yml`; the README's Quick Start walks through it.
+- **The kit** (more control): the installer below adds separate dispatch, sync, and watchdog workflows (each calling the same action), an editable `.github/julesops.yml`, a **Jules Task** issue template, and instruction files for Jules.
+
+The rest of this guide covers the kit.
 
 JulesOps v1 is GitHub-native:
 
@@ -81,14 +88,14 @@ From `templates/`:
 - `templates/jules-core.md` → `.github/jules-core.md`
 - `templates/jules-task.yml` → `.github/ISSUE_TEMPLATE/jules-task.yml`
 - `templates/julesops.yml` → `.github/julesops.yml` and then customize it
-- `templates/resolve-config.py` → `.github/resolve-config.py`
-- `templates/comment-command.js` → `.github/jules-comment-command.js`
 
 From `workflows/`:
 
 - `workflows/jules-dispatch.yml` → `.github/workflows/jules-dispatch.yml`
 - `workflows/jules-state-sync.yml` → `.github/workflows/jules-state-sync.yml`
 - `workflows/jules-watchdog.yml` → `.github/workflows/jules-watchdog.yml`
+
+The workflows call `mkshp-dev/julesops` pinned to a release (for example `@v0.5.0`); keep that version when copying.
 
 Then create `.github/jules-repo.md` in the adopting repo.
 

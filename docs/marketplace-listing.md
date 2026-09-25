@@ -53,9 +53,8 @@ The free tier has no usage caps on the workflow kit itself. GitHub Actions usage
 
 - A GitHub repository with GitHub Actions enabled
 - A Jules API key stored as a repository secret named `JULES_API_KEY`
-- `bash` 3.2+, `git`, and `python3` for the installer (Linux, macOS, or WSL on Windows)
-- `git` CLI
-- GitHub CLI (`gh`) — recommended; used by the installer to create labels automatically. If absent or unauthenticated, the installer prints a manual label checklist instead.
+- Nothing else for the action: add one workflow file (see the README Quick Start). The action creates its labels on the first run.
+- For the optional kit installer: `bash` 3.2+, `git`, and `python3` (Linux, macOS, or WSL on Windows), and optionally the GitHub CLI (`gh`) to create labels during install.
 
 ---
 

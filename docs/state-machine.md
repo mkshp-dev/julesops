@@ -132,6 +132,14 @@ That means the dispatcher should not select another queued issue while an active
 
 ---
 
+# 5b. Issues without a status label
+
+An open issue with the queue label but **no status label at all** counts as `todo`. This lets you
+queue work by adding a single label (`jules-queue`). An issue with any other status label
+(for example `failed` or `done`) is not picked up until it is moved back to `todo`.
+
+---
+
 # 6. Invariants JulesOps should preserve
 
 A repository using JulesOps should be able to rely on the following invariants:

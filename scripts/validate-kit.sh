@@ -17,7 +17,7 @@ assert_file() {
 }
 
 is_bool() { [ "$1" = "true" ] || [ "$1" = "false" ]; }
-is_positive_int() { printf '%s' "$1" | grep -qE '^[0-9]+$' && [ "$1" -ge 1 ]; }
+is_positive_int() { printf '%s' "$1" | grep -E '^[0-9]+$' > /dev/null && [ "$1" -ge 1 ]; }
 
 # Validate a julesops.yml. With a repo root, also check files, branch, labels, and secret.
 validate_config() {
@@ -92,7 +92,7 @@ validate_config() {
       if labels="$(gh label list --repo "$repo_name" --limit 1000 --json name --jq '.[].name' 2>/dev/null)"; then
         for state in todo in_progress review blocked failed "done"; do
           label="$(get "julesops.states.$state")"
-          printf '%s\n' "$labels" | grep -qxF -- "$label" ||
+          printf '%s\n' "$labels" | grep -xF -- "$label" > /dev/null ||
             die "Configured label '$label' (for state '$state') does not exist in remote GitHub repository '$repo_name'."
         done
         echo "  All configured labels verified on GitHub."
@@ -103,7 +103,7 @@ validate_config() {
       echo "Verifying JULES_API_KEY secret on GitHub for '$repo_name'..."
       local secrets
       if secrets="$(gh secret list --repo "$repo_name" --json name --jq '.[].name' 2>/dev/null)"; then
-        if printf '%s\n' "$secrets" | grep -qx JULES_API_KEY; then
+        if printf '%s\n' "$secrets" | grep -x JULES_API_KEY > /dev/null; then
           echo "  JULES_API_KEY secret is configured."
         else
           echo "  [WARNING] JULES_API_KEY secret is NOT set. Dispatch will fail without it."
@@ -121,6 +121,15 @@ validate_config() {
 
 # --- Kit source ---
 kit_files=(
+  action.yml
+  src/lib.sh
+  src/ensure-labels.sh
+  src/dispatch-select.sh
+  src/sync-pr.sh
+  src/sync-comment.sh
+  src/watchdog.py
+  templates/resolve-config.py
+  templates/comment-command.js
   scripts/bootstrap-labels.sh
   scripts/test-fixture.sh
   examples/aggregator/julesops.yml
@@ -138,22 +147,23 @@ done
 
 validate_config "$JULESOPS_KIT_ROOT/templates/julesops.yml"
 
-grep -qE 'jules_api_key:[[:space:]]*\$\{\{[[:space:]]*secrets\.JULES_API_KEY[[:space:]]*\}\}' "$JULESOPS_KIT_ROOT/workflows/jules-dispatch.yml" ||
-  die "Dispatch workflow must pass the JULES_API_KEY secret to Jules."
-grep -q "JulesOps Watchdog" "$JULESOPS_KIT_ROOT/workflows/jules-watchdog.yml" ||
-  die "Watchdog workflow must include the watchdog comment marker."
+grep -qE 'jules-api-key:[[:space:]]*\$\{\{[[:space:]]*secrets\.JULES_API_KEY[[:space:]]*\}\}' "$JULESOPS_KIT_ROOT/workflows/jules-dispatch.yml" ||
+  die "Dispatch workflow must pass the JULES_API_KEY secret to the action."
+grep -q "JulesOps Watchdog" "$JULESOPS_KIT_ROOT/src/watchdog.py" ||
+  die "Watchdog must include the watchdog comment marker."
 if grep -qE 'import[[:space:]]+yaml|from[[:space:]]+yaml[[:space:]]+import' "$JULESOPS_KIT_ROOT/templates/resolve-config.py"; then
   die "Resolver must not depend on PyYAML or undeclared YAML packages."
 fi
 
-# Every script a workflow executes must ship with the kit (installed under .github/).
-workflow_script_refs="$(grep -hoE '(node|python3?)[[:space:]]+[^[:space:]]+\.(js|py)' "$JULESOPS_KIT_ROOT"/workflows/*.yml |
-  awk '{ print $2 }' | sort -u)"
-for ref in $workflow_script_refs; do
-  case "$ref" in
-    .github/*) ;;
-    *) die "Workflow references '$ref', which is not installed by the kit. Workflow scripts must live under .github/." ;;
-  esac
+# Kit workflows are thin wrappers: each must call the action pinned to this kit version.
+assert_action_ref() {
+  local workflow="$1" refs
+  refs="$(grep -oE 'uses:[[:space:]]*mkshp-dev/julesops@[^[:space:]]+' "$workflow" | sed -E 's/uses:[[:space:]]*//' | sort -u)"
+  [ "$refs" = "$JULESOPS_ACTION_REF" ] ||
+    die "$workflow must use $JULESOPS_ACTION_REF (found: ${refs:-none}). Re-run the installer with --upgrade, or bump the kit version with release-kit.sh."
+}
+for workflow in "$JULESOPS_KIT_ROOT"/workflows/*.yml "$JULESOPS_KIT_ROOT"/examples/julesops-workflow.yml; do
+  assert_action_ref "$workflow"
 done
 
 # --- Installed target repository ---
@@ -169,8 +179,11 @@ if [ -n "$target_repo" ]; then
   done
   assert_file "$target_root/$JULESOPS_REPO_INSTRUCTIONS" "Missing installed JulesOps file in target repo: $JULESOPS_REPO_INSTRUCTIONS"
 
-  for ref in $workflow_script_refs; do
-    assert_file "$target_root/$ref" "Installed workflows execute '$ref', but it is missing from the target repo."
+  for entry in "${JULESOPS_MANAGED_FILES[@]}"; do
+    file="$(managed_target "$entry")"
+    case "$file" in
+      .github/workflows/*) assert_action_ref "$target_root/$file" ;;
+    esac
   done
 
   validate_config "$target_root/$JULESOPS_CONFIG_FILE" "$target_root"

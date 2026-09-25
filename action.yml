@@ -6,37 +6,197 @@ branding:
   icon: 'zap'
   color: 'blue'
 
-# JulesOps is a workflow kit installed via script into adopting repositories.
-# This action.yml satisfies GitHub Marketplace listing requirements.
-#
-# The kit includes:
-#   - jules-dispatch.yml    — queues and dispatches Jules tasks
-#   - jules-state-sync.yml  — syncs issue state from PR events and comments
-#   - jules-watchdog.yml    — detects and flags stale active jobs
-#
-# Install the kit into a target repository:
-#   scripts/install-julesops.sh /path/to/repo --base-branch main
-#
-# Full install guide: https://github.com/mkshp-dev/julesops/blob/main/docs/install.md
+inputs:
+  jules-api-key:
+    description: 'Jules API key (store it as the JULES_API_KEY secret). Required for dispatch.'
+    required: false
+  github-token:
+    description: 'Token used to read and update issues, labels, and pull requests.'
+    required: false
+    default: ${{ github.token }}
+  mode:
+    description: >
+      What to run: dispatch, sync, watchdog, or auto. auto picks from the triggering event:
+      schedule and workflow_dispatch run watchdog + dispatch; pull_request and issue_comment run sync.
+    required: false
+    default: auto
+  config-path:
+    description: 'Path to the JulesOps config file. Optional; every setting has a default.'
+    required: false
+    default: .github/julesops.yml
+  dispatch-workflow:
+    description: >
+      Workflow file to start after a maintainer comments /jules retry. Defaults to the calling
+      workflow, which then needs a workflow_dispatch trigger and actions: write.
+    required: false
+    default: ''
+  dry-run:
+    description: 'Log every change instead of making it, and do not invoke Jules.'
+    required: false
+    default: 'false'
+
+outputs:
+  mode:
+    description: 'The modes that ran, comma-separated (e.g. "watchdog,dispatch").'
+    value: ${{ steps.setup.outputs.modes }}
+  issue-number:
+    description: 'The issue selected for dispatch in this run, if any.'
+    value: ${{ steps.select.outputs.issue_number }}
 
 runs:
   using: 'composite'
   steps:
-    - name: JulesOps kit info
+    - name: Resolve JulesOps configuration and mode
+      id: setup
       shell: bash
+      env:
+        JULESOPS_CONFIG_PATH: ${{ inputs.config-path }}
+        JULESOPS_EXPORT_ENV: 'true'
+        INPUT_MODE: ${{ inputs.mode }}
+        EVENT_NAME: ${{ github.event_name }}
+        ACTION_PATH: ${{ github.action_path }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        DISPATCH_WORKFLOW: ${{ inputs.dispatch-workflow }}
       run: |
-        echo ""
-        echo "╔══════════════════════════════════════════════════════════════╗"
-        echo "║  JulesOps — GitHub-native orchestration for Google Jules    ║"
-        echo "╠══════════════════════════════════════════════════════════════╣"
-        echo "║                                                              ║"
-        echo "║  JulesOps is a workflow KIT, not a single-step action.      ║"
-        echo "║  Install it into your repository with the installer script: ║"
-        echo "║                                                              ║"
-        echo "║  scripts/install-julesops.sh <path>                          ║"
-        echo "║                                                              ║"
-        echo "║  Install guide:                                              ║"
-        echo "║  https://github.com/mkshp-dev/julesops/blob/main/docs/install.md  ║"
-        echo "║                                                              ║"
-        echo "╚══════════════════════════════════════════════════════════════╝"
-        echo ""
+        python3 "$ACTION_PATH/templates/resolve-config.py"
+        {
+          echo "JULESOPS_ACTION_PATH=$ACTION_PATH"
+          echo "JULESOPS_DRY_RUN=$DRY_RUN"
+          echo "JULESOPS_DISPATCH_WORKFLOW=$DISPATCH_WORKFLOW"
+        } >> "$GITHUB_ENV"
+
+        case "$INPUT_MODE" in
+          auto)
+            case "$EVENT_NAME" in
+              schedule | workflow_dispatch) modes="watchdog,dispatch" ;;
+              pull_request | pull_request_target | issue_comment) modes="sync" ;;
+              *) echo "::error::JulesOps mode 'auto' does not handle '$EVENT_NAME' events. Set 'mode' explicitly."; exit 1 ;;
+            esac ;;
+          dispatch | sync | watchdog) modes="$INPUT_MODE" ;;
+          *) echo "::error::Unknown JulesOps mode '$INPUT_MODE'. Use dispatch, sync, watchdog, or auto."; exit 1 ;;
+        esac
+
+        if [ "$(grep '^enabled=' "$GITHUB_OUTPUT" | tail -n1 | cut -d= -f2)" != "true" ]; then
+          echo "JulesOps is disabled in $JULESOPS_CONFIG_PATH."
+          modes=""
+        fi
+        echo "modes=$modes" >> "$GITHUB_OUTPUT"
+        for m in dispatch sync watchdog; do
+          case ",$modes," in *",$m,"*) echo "run_$m=true" ;; *) echo "run_$m=false" ;; esac
+        done >> "$GITHUB_OUTPUT"
+        echo "JulesOps modes: ${modes:-none} (dry-run: $DRY_RUN)"
+
+    - name: Create missing JulesOps labels
+      if: steps.setup.outputs.modes != '' && inputs.dry-run != 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: bash "$JULESOPS_ACTION_PATH/src/ensure-labels.sh"
+
+    - name: Watchdog
+      if: steps.setup.outputs.run_watchdog == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: python3 "$JULESOPS_ACTION_PATH/src/watchdog.py"
+
+    - name: Sync issue state
+      if: steps.setup.outputs.run_sync == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        case "$EVENT_NAME" in
+          pull_request | pull_request_target) bash "$JULESOPS_ACTION_PATH/src/sync-pr.sh" ;;
+          issue_comment) bash "$JULESOPS_ACTION_PATH/src/sync-comment.sh" ;;
+          *) echo "::error::Sync handles pull_request and issue_comment events, not '$EVENT_NAME'."; exit 1 ;;
+        esac
+
+    - name: Check Jules API key
+      if: steps.setup.outputs.run_dispatch == 'true' && inputs.dry-run != 'true'
+      shell: bash
+      env:
+        JULES_API_KEY: ${{ inputs.jules-api-key }}
+      run: |
+        if [ -z "$JULES_API_KEY" ]; then
+          echo "::error::The jules-api-key input is empty. Add a JULES_API_KEY secret at https://github.com/$GITHUB_REPOSITORY/settings/secrets/actions (get a key at https://jules.google.com/settings/api) and pass it with 'jules-api-key: \${{ secrets.JULES_API_KEY }}'."
+          exit 1
+        fi
+
+    - name: Select next queued issue
+      id: select
+      if: steps.setup.outputs.run_dispatch == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: bash "$JULESOPS_ACTION_PATH/src/dispatch-select.sh"
+
+    - name: Claim issue
+      if: steps.select.outputs.has_todo == 'true' && inputs.dry-run != 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        ISSUE: ${{ steps.select.outputs.issue_number }}
+      run: |
+        # Claim before invoking Jules so any later run sees this issue as active.
+        source "$JULESOPS_ACTION_PATH/src/lib.sh"
+        set_status "$ISSUE" "$JULESOPS_STATUS_IN_PROGRESS"
+
+    - name: Invoke Jules
+      if: steps.select.outputs.has_todo == 'true' && inputs.dry-run != 'true'
+      uses: google-labs-code/jules-invoke@v1.0.0
+      with:
+        jules_api_key: ${{ inputs.jules-api-key }}
+        starting_branch: ${{ steps.setup.outputs.base_branch }}
+        prompt: ${{ steps.select.outputs.prompt }}
+
+    - name: Confirm dispatch
+      if: steps.select.outputs.has_todo == 'true' && inputs.dry-run != 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        ISSUE: ${{ steps.select.outputs.issue_number }}
+      run: |
+        source "$JULESOPS_ACTION_PATH/src/lib.sh"
+        comment_issue "$ISSUE" "Jules has been successfully dispatched to work on this issue. Status is now \`$JULESOPS_STATUS_IN_PROGRESS\`."
+
+    - name: Mark issue failed
+      if: failure() && steps.select.outputs.has_todo == 'true' && inputs.dry-run != 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        ISSUE: ${{ steps.select.outputs.issue_number }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        source "$JULESOPS_ACTION_PATH/src/lib.sh"
+        set_status "$ISSUE" "$JULESOPS_STATUS_FAILED"
+        comment_issue "$ISSUE" "JulesOps failed while dispatching this issue to Jules ([run log]($RUN_URL)). Marking it as \`$JULESOPS_STATUS_FAILED\`; comment \`/jules retry\` to try again."
+
+    - name: Write run summary
+      if: always() && steps.setup.outputs.modes != ''
+      shell: bash
+      env:
+        MODES: ${{ steps.setup.outputs.modes }}
+        HAS_ACTIVE: ${{ steps.select.outputs.has_active }}
+        ACTIVE_ISSUE: ${{ steps.select.outputs.active_issue }}
+        HAS_TODO: ${{ steps.select.outputs.has_todo }}
+        ISSUE: ${{ steps.select.outputs.issue_number }}
+        DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        {
+          if [ "$DRY_RUN" = "true" ]; then echo "### JulesOps: $MODES (dry run)"; else echo "### JulesOps: $MODES"; fi
+          echo
+          case ",$MODES," in
+            *,dispatch,*)
+              if [ "$HAS_ACTIVE" = "true" ]; then
+                echo "🟡 Dispatch skipped: issue #$ACTIVE_ISSUE is already active (in-progress, review, or blocked)."
+              elif [ "$HAS_TODO" = "true" ] && [ "$DRY_RUN" = "true" ]; then
+                echo "🔍 Would dispatch issue #$ISSUE."
+              elif [ "$HAS_TODO" = "true" ]; then
+                echo "Dispatched issue #$ISSUE (if a step failed, the issue was labeled failed)."
+              else
+                echo "⚪ Dispatch idle: no queued issues."
+              fi ;;
+          esac
+        } >> "$GITHUB_STEP_SUMMARY"

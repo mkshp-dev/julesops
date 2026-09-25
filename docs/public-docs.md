@@ -40,8 +40,6 @@ The installer copies the following files into your repository:
 - `.github/julesops.yml`
 - `.github/jules-core.md`
 - `.github/jules-repo.md` if missing
-- `.github/resolve-config.py`
-- `.github/jules-comment-command.js`
 - `.github/ISSUE_TEMPLATE/jules-task.yml`
 
 ### Validate Installation
@@ -137,8 +135,6 @@ To remove JulesOps from your repository, delete the following files:
 .github/julesops.yml
 .github/jules-core.md
 .github/jules-repo.md
-.github/resolve-config.py
-.github/jules-comment-command.js
 .github/ISSUE_TEMPLATE/jules-task.yml
 ```
 

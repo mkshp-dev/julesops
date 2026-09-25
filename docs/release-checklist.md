@@ -19,6 +19,7 @@ Expected result: `JulesOps kit validation passed.`
 ```bash
 scripts/test-fixture.sh
 scripts/test-workflow-logic.sh
+scripts/test-action.sh
 node scripts/__tests__/comment-command.test.js
 ```
 
@@ -44,7 +45,7 @@ manually." and list all 7 labels.
 ### 4. Verify Resolver Portability
 
 ```bash
-(cd "$target" && python3 .github/resolve-config.py)
+(cd "$target" && python3 "$OLDPWD/templates/resolve-config.py")
 ```
 
 The resolver must not require PyYAML or network-installed packages.

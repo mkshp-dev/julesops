@@ -1,0 +1,35 @@
+# Copy to .github/workflows/julesops.yml and add a JULES_API_KEY repository secret.
+name: JulesOps
+
+on:
+  schedule:
+    - cron: "15 * * * *"   # pick up the next queued issue every hour
+  workflow_dispatch:       # "Run workflow" button, and /jules retry
+  pull_request:
+    types: [opened, reopened, closed]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  actions: write           # lets /jules retry start this workflow
+
+jobs:
+  dispatch:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    concurrency: julesops-dispatch   # never dispatch two issues at once
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mkshp-dev/julesops@v0.5.0
+        with:
+          jules-api-key: ${{ secrets.JULES_API_KEY }}
+
+  sync:
+    if: github.event_name == 'pull_request' || github.event_name == 'issue_comment'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mkshp-dev/julesops@v0.5.0

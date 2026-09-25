@@ -46,6 +46,8 @@ julesops:
 
 ---
 
+> **The config file is optional.** Without `.github/julesops.yml`, JulesOps uses the defaults shown in this document. Add the file only to change something. Point the action at a different path with its `config-path` input.
+
 # 1. `enabled` — **Stable**
 
 ```yaml
@@ -290,7 +292,7 @@ All fields marked **Stable** in this document are part of the v1 free-core confi
 - Are consumed by the shipping workflow kit (dispatch, state-sync, watchdog)
 - Have been validated across 5 external repositories in the beta pass (see `docs/beta-report.md`)
 - Will not change key names, nesting, or semantics without a major version bump
-- Have sensible defaults in `resolve-config.py` that allow the config to work with minimal customization
+- Have defaults in `templates/resolve-config.py`, so the config file itself is optional
 
 Fields marked **Experimental** carry no such guarantee and adopters should expect possible changes.
 

@@ -537,7 +537,7 @@ The billing system subscribes to the following Stripe webhooks to keep subscript
 # 14. ADR-001: Reusable GitHub Actions Extraction (Issue #84)
 
 **Date**: 2026-07-15
-**Status**: Deferred — do not extract before Marketplace launch
+**Status**: Superseded by ADR-002
 
 ---
 
@@ -628,3 +628,36 @@ The first 3 steps of dispatch (checkout → resolve config → API key check →
 
 - None before Marketplace launch.
 - Revisit as ADR-001-revision after v1.0 Marketplace listing is live and 3+ external adopters are active.
+
+---
+
+# 15. ADR-002: Ship the logic as the Marketplace action
+
+**Date**: 2026-09-25
+**Status**: Accepted (supersedes ADR-001)
+
+## Context
+
+The Marketplace listing pointed at an `action.yml` that only printed an install banner, so adding
+`uses: mkshp-dev/julesops@...` did nothing. The logic lived in about 600 lines of inline bash and
+Python across three workflow files that every adopter had to copy and re-copy on upgrade.
+
+## Decision
+
+`action.yml` is a composite action that holds all of the logic, in scripts under `src/`:
+
+- `mode: dispatch | sync | watchdog | auto` (`auto` picks from the triggering event)
+- a missing config file falls back to defaults; missing labels are created on the first run
+- the core Jules instructions ship with the action and are used when the repository has none
+- `dry-run: true` logs every change instead of making it, so CI runs the real action
+
+The kit's three workflows become thin wrappers that call the action, pinned to the kit version
+(`release-kit.sh` bumps the pin). The installer no longer copies `resolve-config.py` or the comment
+parser into `.github/`; `--upgrade` and the uninstaller remove copies left by older installs.
+
+## Consequences
+
+- Marketplace users need one workflow file and a secret.
+- One copy of the logic, covered by `scripts/test-action.sh` and a CI job that runs `uses: ./`.
+- Adopting repositories now depend on a published action tag. Kit workflows pin an exact version,
+  so upgrades stay explicit (`--upgrade`, or bump the `@vX.Y.Z`).

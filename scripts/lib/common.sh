@@ -14,12 +14,20 @@ JULESOPS_MANAGED_FILES=(
   "templates/jules-core.md:.github/jules-core.md"
   "templates/jules-task.yml:.github/ISSUE_TEMPLATE/jules-task.yml"
   "templates/julesops.yml:.github/julesops.yml"
-  "templates/resolve-config.py:.github/resolve-config.py"
-  "templates/comment-command.js:.github/jules-comment-command.js"
   "workflows/jules-dispatch.yml:.github/workflows/jules-dispatch.yml"
   "workflows/jules-state-sync.yml:.github/workflows/jules-state-sync.yml"
   "workflows/jules-watchdog.yml:.github/workflows/jules-watchdog.yml"
 )
+
+# Files earlier kit versions installed that the workflows no longer use (the action now
+# ships its own copies). --upgrade and the uninstaller remove them.
+JULESOPS_LEGACY_FILES=(
+  ".github/resolve-config.py"
+  ".github/jules-comment-command.js"
+)
+
+# The action reference every kit workflow pins, e.g. mkshp-dev/julesops@v0.5.0.
+JULESOPS_ACTION_REF="mkshp-dev/julesops@$JULESOPS_KIT_VERSION"
 
 # Installed files that hold user-customized content.
 JULESOPS_CONFIG_FILE=".github/julesops.yml"

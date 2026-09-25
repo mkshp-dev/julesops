@@ -29,8 +29,8 @@ done
 version="${positional[0]}"
 date="${positional[1]}"
 
-printf '%s' "$version" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$' || die "Version must look like v1.2.3. Received: $version"
-printf '%s' "$date" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' || die "Date must look like YYYY-MM-DD. Received: $date"
+printf '%s' "$version" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' > /dev/null || die "Version must look like v1.2.3. Received: $version"
+printf '%s' "$date" | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' > /dev/null || die "Date must look like YYYY-MM-DD. Received: $date"
 
 version_file="$JULESOPS_SCRIPTS_DIR/kit-version.txt"
 changelog="$JULESOPS_KIT_ROOT/CHANGELOG.md"
@@ -69,4 +69,13 @@ fi
 
 printf '%s\n' "$version" > "$version_file"
 printf '%s\n' "$updated" > "$changelog"
-echo "Updated kit version to $version and added a CHANGELOG section for $date."
+
+# Re-pin the action reference in the kit workflows and the docs that show them.
+for file in "$JULESOPS_KIT_ROOT"/workflows/*.yml "$JULESOPS_KIT_ROOT"/examples/*.yml "$JULESOPS_KIT_ROOT"/README.md "$JULESOPS_KIT_ROOT"/docs/*.md; do
+  if grep -q 'mkshp-dev/julesops@v[0-9]' "$file"; then
+    sed -E "s#mkshp-dev/julesops@v[0-9]+\.[0-9]+\.[0-9]+#mkshp-dev/julesops@$version#g" "$file" > "$file.tmp"
+    mv "$file.tmp" "$file"
+  fi
+done
+
+echo "Updated kit version to $version, re-pinned mkshp-dev/julesops@$version, and added a CHANGELOG section for $date."
