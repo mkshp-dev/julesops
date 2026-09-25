@@ -22,6 +22,7 @@
  */
 
 const db = require('./db');
+const store = require('./store');
 const { dispatch } = require('./notify');
 
 const DEFAULT_STALE_HOURS = Number(process.env.ALERT_STALE_HOURS || 24);
@@ -76,11 +77,8 @@ async function detectFailedJobs() {
   if (pool) {
     return db.query(`SELECT * FROM jobs WHERE current_status = 'failed' ORDER BY updated_at DESC LIMIT 50`);
   }
-  // JSON-file mode
-  const { jobs } = JSON.parse(require('fs').readFileSync(
-    require('path').join(__dirname, '..', 'data', 'store.json'), 'utf8'
-  ));
-  return (jobs || []).filter(j => j.current_status === 'failed');
+  // JSON-file mode: go through the store so JULESOPS_DATA_DIR is honored.
+  return store.listJobs({ status: 'failed', limit: 50 });
 }
 
 /**
@@ -101,14 +99,10 @@ async function detectStaleJobs(status, thresholdHours) {
       [status, thresholdHours],
     );
   }
-  // JSON-file mode
+  // JSON-file mode: go through the store so JULESOPS_DATA_DIR is honored.
   const cutoff = Date.now() - thresholdHours * 60 * 60 * 1000;
-  const { jobs } = JSON.parse(require('fs').readFileSync(
-    require('path').join(__dirname, '..', 'data', 'store.json'), 'utf8'
-  ));
-  return (jobs || []).filter(j =>
-    j.current_status === status && new Date(j.updated_at).getTime() < cutoff
-  );
+  const jobs = await store.listJobs({ status, limit: 500 });
+  return jobs.filter((j) => new Date(j.updated_at).getTime() < cutoff).slice(0, 50);
 }
 
 /**

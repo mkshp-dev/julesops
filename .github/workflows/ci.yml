@@ -81,18 +81,35 @@ jobs:
         run: test "$MODE" = "dispatch"
 
   validate-server:
-    name: Validate hosted server skeleton
+    name: Server unit tests and smoke test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run unit tests
+        working-directory: server
+        run: npm test
+
       - name: Start server and run smoke test
         working-directory: server
         env:
           GITHUB_WEBHOOK_SECRET: ci-secret
+          ALERT_WORKER_ENABLED: 'false'
         run: |
+          export JULESOPS_DATA_DIR="$RUNNER_TEMP/julesops-data"
           node src/server.js &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT

@@ -13,7 +13,7 @@
  *   OAUTH_REDIRECT_URI          — Callback URL (default: http://HOST:PORT/auth/github/callback)
  *
  * On successful login, the session gains:
- *   { githubId, githubLogin, githubName, githubAvatarUrl, accessToken }
+ *   { userId, githubId, githubLogin, githubName, githubAvatarUrl, accessToken }
  *
  * The user record is persisted to Postgres (if available) or logged only.
  */
@@ -308,6 +308,8 @@ async function handleOAuthCallback(req, res) {
 
   // Create session
   const sessionId = createSession({
+    // users.id (UUID) — memberships reference it, so RBAC lookups use this, not githubId.
+    userId: persistedUser ? persistedUser.id : null,
     githubId: githubUser.id,
     githubLogin: githubUser.login,
     githubName: githubUser.name,

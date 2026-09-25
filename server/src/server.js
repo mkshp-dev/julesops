@@ -51,8 +51,8 @@ function requireHostedSession(req, res) {
 
 async function getAccessibleInstallationsForRequest(req) {
   if (!AUTH_REQUIRED) return null;
-  if (!req.session) return [];
-  return getAccessibleInstallationIds(String(req.session.githubId), 'viewer') || [];
+  if (!req.session || !req.session.userId) return [];
+  return getAccessibleInstallationIds(req.session.userId, 'viewer') || [];
 }
 
 async function requireBillingAdmin(req, res, installationId) {
@@ -62,7 +62,9 @@ async function requireBillingAdmin(req, res, installationId) {
     return false;
   }
   if (!installationId) {
-    const installations = await getAccessibleInstallationIds(String(req.session.githubId), 'admin');
+    const installations = req.session.userId
+      ? await getAccessibleInstallationIds(req.session.userId, 'admin')
+      : [];
     if (!installations || installations.length === 0) {
       sendJson(res, 403, { ok: false, error: 'insufficient permissions (required: admin)' });
       return false;
