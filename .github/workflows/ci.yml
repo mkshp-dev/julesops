@@ -9,54 +9,50 @@ on:
 jobs:
   validate-kit:
     name: Validate kit and installer
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Lint kit scripts
+        run: shellcheck -x -P scripts scripts/*.sh scripts/lib/common.sh
+
       - name: Validate source kit
-        shell: pwsh
-        run: .\scripts\validate-kit.ps1
+        run: scripts/validate-kit.sh
 
       - name: Run fixture smoke test
-        shell: pwsh
-        run: .\scripts\test-fixture.ps1
+        run: scripts/test-fixture.sh
 
       - name: Run retry command parser tests
-        shell: bash
         run: node scripts/__tests__/comment-command.test.js
 
   workflow-logic-tests:
     name: Workflow logic integration tests
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Run workflow logic tests
-        shell: pwsh
-        run: .\scripts\test-workflow-logic.ps1
+        run: scripts/test-workflow-logic.sh
 
   validate-server:
     name: Validate hosted server skeleton
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Start server and run smoke test
-        shell: pwsh
+        working-directory: server
+        env:
+          GITHUB_WEBHOOK_SECRET: ci-secret
         run: |
-          cd server
-          $env:GITHUB_WEBHOOK_SECRET="ci-secret"
-          $process = Start-Process -FilePath node -ArgumentList "src/server.js" -PassThru -WindowStyle Hidden
-          try {
-            Start-Sleep -Seconds 2
-            npm run smoke
-          }
-          finally {
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-          }
+          node src/server.js &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          sleep 2
+          npm run smoke

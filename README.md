@@ -43,9 +43,9 @@ JulesOps handles the operational layer so you can focus on reviewing code.
 
 ## Quick Start
 
-1. **Install the kit**: Clone this repository and run the installer against your repository (requires PowerShell 7+):
-   ```powershell
-   .\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\repo" -BaseBranch main
+1. **Install the kit**: Clone this repository and run the installer against your repository (requires `bash`, `git`, and `python3`):
+   ```bash
+   scripts/install-julesops.sh /path/to/repo --base-branch main
    ```
    This copies the workflows, config, and issue template into `.github/` and creates the status labels.
    *(Or refer to the [Manual Installation](docs/install.md#4-manual-install) guide)*

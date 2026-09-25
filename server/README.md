@@ -44,34 +44,34 @@ The JulesOps hosted control-plane backend. Supports both a local JSON-file demo 
 
 No database required — data is stored in `server/data/store.json`.
 
-```powershell
+```bash
 cd server
 npm install
-$env:GITHUB_WEBHOOK_SECRET="dev-secret"
+export GITHUB_WEBHOOK_SECRET="dev-secret"
 npm start
 ```
 
 ## Run smoke tests
 
-```powershell
+```bash
 cd server
-$env:JULESOPS_SERVER_URL="http://127.0.0.1:3000"
-$env:GITHUB_WEBHOOK_SECRET="dev-secret"
+export JULESOPS_SERVER_URL="http://127.0.0.1:3000"
+export GITHUB_WEBHOOK_SECRET="dev-secret"
 npm run smoke
 ```
 
 ## Run unit tests
 
-```powershell
+```bash
 cd server
 node --test src/__tests__/*.test.js
 ```
 
 ## Run database migrations
 
-```powershell
+```bash
 cd server
-$env:DATABASE_URL="postgres://user:pass@host/dbname"
+export DATABASE_URL="postgres://user:pass@host/dbname"
 npm run migrate
 ```
 

@@ -63,17 +63,17 @@ JULESOPS_DATA_DIR=./data
 
 Run locally:
 
-```powershell
+```bash
 cd server
-$env:GITHUB_WEBHOOK_SECRET="my-local-webhook-secret-123"
+export GITHUB_WEBHOOK_SECRET="my-local-webhook-secret-123"
 npm start
 ```
 
 Run the smoke test from another terminal:
 
-```powershell
+```bash
 cd server
-$env:GITHUB_WEBHOOK_SECRET="my-local-webhook-secret-123"
+export GITHUB_WEBHOOK_SECRET="my-local-webhook-secret-123"
 npm run smoke
 ```
 

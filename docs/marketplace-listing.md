@@ -53,7 +53,7 @@ The free tier has no usage caps on the workflow kit itself. GitHub Actions usage
 
 - A GitHub repository with GitHub Actions enabled
 - A Jules API key stored as a repository secret named `JULES_API_KEY`
-- PowerShell 5.1+ (Windows) or PowerShell Core 7+ (macOS/Linux) for the installer
+- `bash` 3.2+, `git`, and `python3` for the installer (Linux, macOS, or WSL on Windows)
 - `git` CLI
 - GitHub CLI (`gh`) — recommended; used by the installer to create labels automatically. If absent or unauthenticated, the installer prints a manual label checklist instead.
 

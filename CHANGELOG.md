@@ -8,11 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- `/jules retry` and `/jules requeue` failed in installed repositories because `jules-state-sync.yml` ran `scripts/comment-command.js`, which the installer never copied. The parser now ships as `.github/jules-comment-command.js`, and `validate-kit.ps1` checks that every script a workflow executes is installed.
+- `/jules retry` and `/jules requeue` failed in installed repositories because `jules-state-sync.yml` ran `scripts/comment-command.js`, which the installer never copied. The parser now ships as `.github/jules-comment-command.js`, and `validate-kit.sh` checks that every script a workflow executes is installed.
 - `require_issue_link` posted a validation warning on every human-authored pull request. It now applies only to pull requests opened by `pull_request.jules_authors` (default `google-labs-jules[bot]`).
 - Any commenter could move an in-progress issue to `blocked` by posting the blocked marker. The marker is now honored only from bot accounts, `jules_authors`, or maintainers.
 - Overlapping `Jules Dispatch` runs could invoke Jules twice for the same issue. Dispatch now uses a `concurrency` group and claims the issue (`status:in-progress`) before invoking Jules.
 - Watchdog review-transition comments rendered a stray backslash (`` \`status:review\` ``).
+- `--upgrade` on a repository without an existing `julesops.yml` now applies `--base-branch` / `--queue-label` to the newly written config.
+
+### Changed
+- **Breaking (kit tooling):** all kit scripts are now bash instead of PowerShell (`install-julesops.sh`, `uninstall-julesops.sh`, `bootstrap-labels.sh`, `validate-kit.sh`, `release-kit.sh`, `test-fixture.sh`, `test-workflow-logic.sh`). They need `bash` 3.2+, `git` 2.28+, and `python3`, and run on Linux, macOS, and WSL. Flags are now GNU-style (`--upgrade`, `--force`, `--dry-run`, `--skip-labels`, `--base-branch`, `--queue-label`, `--include-config`) and the target repository is a positional argument.
+- Kit scripts read `julesops.yml` with the same parser as the installed `resolve-config.py` (via `scripts/lib/config_dump.py`), replacing the separate PowerShell YAML reader.
+- Installed files are written with LF line endings (the PowerShell installer wrote CRLF version markers).
+- `release-kit.sh` moves the `## [Unreleased]` entries under the new version heading; the PowerShell version inserted the new section above `## [Unreleased]`.
+- CI runs on `ubuntu-latest` and lints the kit scripts with `shellcheck`.
 
 ### Added
 - `pull_request.jules_authors` config field.

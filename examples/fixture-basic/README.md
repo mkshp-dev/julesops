@@ -18,8 +18,8 @@ The `repo/` directory intentionally does **not** contain JulesOps-installed `.gi
 
 From the JulesOps source repository:
 
-```powershell
-.\scripts\test-fixture.ps1
+```bash
+scripts/test-fixture.sh
 ```
 
 The smoke test covers:

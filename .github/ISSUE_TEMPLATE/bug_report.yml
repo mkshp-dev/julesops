@@ -38,7 +38,7 @@ body:
     id: context
     attributes:
       label: Context & Environment
-      description: OS, PowerShell version, Git version, gh CLI version.
-      placeholder: OS version, PowerShell version, etc.
+      description: OS, bash version, Git version, Python version, gh CLI version.
+      placeholder: OS version, bash --version, etc.
     validations:
       required: false

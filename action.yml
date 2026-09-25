@@ -15,7 +15,7 @@ branding:
 #   - jules-watchdog.yml    — detects and flags stale active jobs
 #
 # Install the kit into a target repository:
-#   .\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\repo" -BaseBranch main
+#   scripts/install-julesops.sh /path/to/repo --base-branch main
 #
 # Full install guide: https://github.com/mkshp-dev/julesops/blob/main/docs/install.md
 
@@ -33,7 +33,7 @@ runs:
         echo "║  JulesOps is a workflow KIT, not a single-step action.      ║"
         echo "║  Install it into your repository with the installer script: ║"
         echo "║                                                              ║"
-        echo "║  .\scripts\install-julesops.ps1 -TargetRepo <path>         ║"
+        echo "║  scripts/install-julesops.sh <path>                          ║"
         echo "║                                                              ║"
         echo "║  Install guide:                                              ║"
         echo "║  https://github.com/mkshp-dev/julesops/blob/main/docs/install.md  ║"
