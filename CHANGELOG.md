@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Status changes replace the issue's status label in a single API call instead of several remove/add calls.
 - The watchdog and dispatch no longer stop at the first 30 issues, pull requests, or comments.
 - A failed dispatch comment links the run log and mentions `/jules retry`.
+- Workflows and examples use `actions/checkout@v5` (Node 24); v4 runs on the deprecated Node 20 runtime.
 
 ### Fixed
 - `/jules retry` and `/jules requeue` failed in installed repositories because `jules-state-sync.yml` ran `scripts/comment-command.js`, which the installer never copied. The parser now ships as `.github/jules-comment-command.js`, and `validate-kit.sh` checks that every script a workflow executes is installed.
