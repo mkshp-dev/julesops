@@ -34,7 +34,7 @@ When a new GitHub issue is opened:
 | `JULES_API_KEY` secret not found in workflow logs | Secret not configured in repository settings | Point to GitHub docs on repository secrets |
 | Dispatch workflow exits without selecting work | `enabled: false` in config, or no `jules-queue` label on issue, or issue not using the JulesOps template | Check `julesops.yml`, label, and issue template |
 | Stale `status:in-progress` never moved by watchdog | Watchdog schedule may not have triggered; `stale_in_progress_hours` threshold not reached | Check workflow run history; confirm watchdog cron |
-| Config resolver error | Python version < 3.8, or `julesops.yml` YAML syntax error | Run `python .github/resolve-config.py` locally; inspect config |
+| Config resolver error | Python version < 3.8, or `julesops.yml` YAML syntax error | From the repo root, run `python3 /path/to/julesops/templates/resolve-config.py`; inspect config |
 
 ---
 

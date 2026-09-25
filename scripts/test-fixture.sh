@@ -33,7 +33,7 @@ echo "  Dry-run install did not write files."
 
 "$scripts/install-julesops.sh" --base-branch main "$target"
 "$scripts/validate-kit.sh" "$target"
-(cd "$target" && GITHUB_OUTPUT="" python3 .github/resolve-config.py)  # print to stdout, not the job output
+(cd "$target" && GITHUB_OUTPUT="" python3 "$JULESOPS_KIT_ROOT/templates/resolve-config.py")  # print to stdout, not the job output
 "$scripts/bootstrap-labels.sh" --dry-run "$target"
 
 config_path="$target/$JULESOPS_CONFIG_FILE"
@@ -53,7 +53,7 @@ missing_branch_target="$(new_fixture_copy)"
 if output="$("$scripts/validate-kit.sh" "$missing_branch_target" 2>&1)"; then
   die "Validation should fail when configured base branch is missing."
 fi
-printf '%s\n' "$output" | grep -q "does not exist" || die "Unexpected validation failure: $output"
+printf '%s\n' "$output" | grep "does not exist" > /dev/null || die "Unexpected validation failure: $output"
 echo "  Missing branch validation failed as expected."
 
 echo "JulesOps fixture smoke test passed."

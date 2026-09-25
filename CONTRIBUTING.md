@@ -31,7 +31,8 @@ The same checks run in CI on `ubuntu-latest`:
 ```bash
 shellcheck -x -P scripts scripts/*.sh scripts/lib/common.sh
 scripts/test-fixture.sh          # install / upgrade / force / validate against a fixture repo
-scripts/test-workflow-logic.sh   # resolver output, defaults, comment parser, uninstall
+scripts/test-workflow-logic.sh   # resolver output, defaults, installed workflows, upgrade, uninstall
+scripts/test-action.sh           # action scripts in src/ against a stubbed gh CLI
 node scripts/__tests__/comment-command.test.js
 ```
 
@@ -46,7 +47,7 @@ scripts/validate-kit.sh ./temp_target_repo
 ## Coding Guidelines
 
 - **Kit scripts**: Write them in bash, source `scripts/lib/common.sh`, and keep them compatible with bash 3.2 (the macOS system bash): no associative arrays, `mapfile`, or `${var,,}`. Read config through `scripts/lib/config_dump.py` so scripts and workflows parse `julesops.yml` the same way.
-- **GitHub Actions Workflows**: Minimize duplicate scripts where possible. Prefer using the unified configuration parser helper script `.github/resolve-config.py` for parsing parameters.
+- **Action logic**: The action (`action.yml`) runs the scripts in `src/`. Put logic there, not in workflow YAML; the kit workflows in `workflows/` are thin wrappers. Scripts read config from the `JULESOPS_*` variables exported by `templates/resolve-config.py`, and every GitHub write goes through `gh_write` / `set_status` in `src/lib.sh` so `dry-run` is honored. Cover changes in `scripts/test-action.sh`.
 - **Convention**: Adhere to [Conventional Commits](https://www.conventionalcommits.org/) standards for all commit messages.
 - **Issue Linking**: Ensure all Pull Requests link to a tracked Jules issue in the description (e.g., `Closes #123`) to satisfy strict issue validation checks.
 - **Branch Target**: Target the `main` branch.

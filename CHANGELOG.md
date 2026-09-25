@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.0] - 2026-09-25
 
+### Added
+- **The Marketplace action now works.** `uses: mkshp-dev/julesops@v0.5.0` runs JulesOps directly: `mode` selects `dispatch`, `sync`, `watchdog`, or `auto` (picked from the triggering event). A single workflow file and a `JULES_API_KEY` secret are enough; see `examples/julesops-workflow.yml`. Previously `action.yml` only printed an install banner.
+- The config file is optional; every setting has a default.
+- Missing JulesOps labels are created on the first run.
+- An open issue with the queue label and no status label counts as queued, so `jules-queue` alone queues work.
+- The core Jules instructions ship with the action and are used when the repository has no `.github/jules-core.md`.
+- `dry-run` input that logs every change instead of making it; CI runs the real action this way.
+- `scripts/test-action.sh`: tests for the action scripts against a stubbed `gh` CLI.
+
+### Changed
+- The kit's workflows are thin wrappers that call the action, pinned to the kit version. The installer no longer copies `.github/resolve-config.py` or `.github/jules-comment-command.js`; `--upgrade` and the uninstaller remove copies left by older installs.
+- Status changes replace the issue's status label in a single API call instead of several remove/add calls.
+- The watchdog and dispatch no longer stop at the first 30 issues, pull requests, or comments.
+- A failed dispatch comment links the run log and mentions `/jules retry`.
+- Workflows and examples use `actions/checkout@v5` (Node 24); v4 runs on the deprecated Node 20 runtime.
+
 ### Fixed
 - `/jules retry` and `/jules requeue` failed in installed repositories because `jules-state-sync.yml` ran `scripts/comment-command.js`, which the installer never copied. The parser now ships as `.github/jules-comment-command.js`, and `validate-kit.sh` checks that every script a workflow executes is installed.
 - `require_issue_link` posted a validation warning on every human-authored pull request. It now applies only to pull requests created by Jules: a commit authored by a `pull_request.jules_authors` login (default `google-labs-jules[bot]`) or a Jules task link in the body. The PR author is not used, because Jules opens PRs under the account of the user who started the task.

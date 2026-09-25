@@ -46,6 +46,7 @@ for entry in "${JULESOPS_MANAGED_FILES[@]}"; do
     to_remove+=("$relative")
   fi
 done
+to_remove+=("${JULESOPS_LEGACY_FILES[@]}")
 if $include_config; then
   to_remove+=("$JULESOPS_REPO_INSTRUCTIONS")
 fi

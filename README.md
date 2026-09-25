@@ -2,7 +2,7 @@
 
 Run Google Jules safely inside GitHub.
 
-JulesOps is a GitHub Actions workflow kit that turns issues, pull requests, comments, and labels into a reliable automation workflow for Google Jules.
+JulesOps is a GitHub Action that turns labeled issues into a queue for Google Jules. It sends one issue at a time to Jules, tracks it through `todo ➔ in progress ➔ review ➔ done` as the pull request moves, and lets maintainers retry failures with a comment.
 
 ✔ Queue jobs  
 ✔ Prevent duplicate runs  
@@ -15,9 +15,6 @@ JulesOps is a GitHub Actions workflow kit that turns issues, pull requests, comm
 [![License](https://img.shields.io/github/license/mkshp-dev/julesops)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/mkshp-dev/julesops?style=social)](https://github.com/mkshp-dev/julesops/stargazers)
 [![Open Issues](https://img.shields.io/github/issues/mkshp-dev/julesops)](https://github.com/mkshp-dev/julesops/issues)
-
-> **Note:** JulesOps is installed as a set of workflow files in your repository, not as a single
-> `uses:` step. The Marketplace entry only points you to the installer.
 
 ---
 
@@ -43,47 +40,82 @@ JulesOps handles the operational layer so you can focus on reviewing code.
 
 ## Quick Start
 
-1. **Install the kit**: Clone this repository and run the installer against your repository (requires `bash`, `git`, and `python3`):
-   ```bash
-   scripts/install-julesops.sh /path/to/repo --base-branch main
+1. **Add your Jules API key** as a repository secret named `JULES_API_KEY` (Settings ➔ Secrets and variables ➔ Actions). Get a key at [jules.google.com/settings/api](https://jules.google.com/settings/api).
+2. **Add this workflow** as `.github/workflows/julesops.yml`:
+
+   ```yaml
+   name: JulesOps
+
+   on:
+     schedule:
+       - cron: "15 * * * *"   # pick up the next queued issue every hour
+     workflow_dispatch:       # "Run workflow" button, and /jules retry
+     pull_request:
+       types: [opened, reopened, closed]
+     issue_comment:
+       types: [created]
+
+   permissions:
+     contents: read
+     issues: write
+     pull-requests: read
+     actions: write           # lets /jules retry start this workflow
+
+   jobs:
+     dispatch:
+       if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+       runs-on: ubuntu-latest
+       concurrency: julesops-dispatch   # never dispatch two issues at once
+       steps:
+         - uses: actions/checkout@v5
+         - uses: mkshp-dev/julesops@v0.5.0
+           with:
+             jules-api-key: ${{ secrets.JULES_API_KEY }}
+
+     sync:
+       if: github.event_name == 'pull_request' || github.event_name == 'issue_comment'
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v5
+         - uses: mkshp-dev/julesops@v0.5.0
    ```
-   This copies the workflows, config, and issue template into `.github/` and creates the status labels.
-   *(Or refer to the [Manual Installation](docs/install.md#4-manual-install) guide)*
-2. **Commit and push** the new `.github/` files.
-3. **Add API key**: Save your Jules API key as a repository secret named `JULES_API_KEY` (Settings ➔ Secrets and variables ➔ Actions).
-4. **Queue a task**: Open an issue using the **Jules Task** template. It is labeled `jules-queue` + `status:todo` automatically.
-5. **Dispatch**: `Jules Dispatch` picks it up on its hourly schedule, or run it immediately from the Actions tab.
+3. **Queue a task**: label an issue `jules-queue` and describe the work in its body. JulesOps creates its labels on the first run.
+4. **Dispatch**: the next hourly run sends it to Jules, or start one now from the Actions tab (**JulesOps ➔ Run workflow**).
 
-If a task fails or blocks, a maintainer can comment `/jules retry` on the issue to requeue it.
+When Jules opens a pull request that says `Closes #<issue>`, the issue moves to review, and to done when the PR is merged. If a task fails or blocks, a maintainer comments `/jules retry` on the issue to queue it again.
 
----
+No config file is needed. To change the base branch, labels, or policies, add a [`.github/julesops.yml`](templates/julesops.yml) — see [`docs/repo-config-spec.md`](docs/repo-config-spec.md) for every option.
 
-## Example
+### Inputs
 
-After installation your repository contains:
+| Input | Default | Description |
+|---|---|---|
+| `jules-api-key` | — | Jules API key. Required for dispatch. |
+| `mode` | `auto` | `dispatch`, `sync`, `watchdog`, or `auto`. `auto` runs watchdog + dispatch on `schedule` / `workflow_dispatch`, and sync on `pull_request` / `issue_comment`. |
+| `github-token` | `github.token` | Token for reading and updating issues, labels, and PRs. |
+| `config-path` | `.github/julesops.yml` | Optional config file. |
+| `dispatch-workflow` | the calling workflow | Workflow to start after `/jules retry`. |
+| `dry-run` | `false` | Log every change instead of making it, and don't invoke Jules. |
 
-```text
-.github/
-├── julesops.yml                 # repository config (base branch, labels, policies)
-├── jules-core.md                # generic instructions sent to Jules
-├── jules-repo.md                # your repository-specific instructions
-├── resolve-config.py            # config resolver used by the workflows
-├── jules-comment-command.js     # /jules retry | requeue parser
-├── ISSUE_TEMPLATE/jules-task.yml
-└── workflows/
-    ├── jules-dispatch.yml       # picks the next queued issue and invokes Jules
-    ├── jules-state-sync.yml     # moves issues through states on PR / comment events
-    └── jules-watchdog.yml       # flags stale in-progress / review issues
+Outputs: `mode` (the modes that ran) and `issue-number` (the issue selected for dispatch).
+
+### Want more control?
+
+The kit installer sets up separate dispatch, sync, and watchdog workflows, a `.github/julesops.yml` to edit, a **Jules Task** issue template, and repository-specific instructions for Jules. The workflows call this same action:
+
+```bash
+git clone https://github.com/mkshp-dev/julesops.git && cd julesops
+scripts/install-julesops.sh --base-branch main /path/to/your/repo
 ```
 
-See [`docs/repo-config-spec.md`](docs/repo-config-spec.md) for every config option.
+See [`docs/install.md`](docs/install.md). The installer needs `bash`, `git`, and `python3`.
 
 ---
 
 ## Architecture
 
 JulesOps is split into two logical layers:
-- **Local Workflow Kit**: The issue templates, labels, and state synchronization rules running in your repository via GitHub Actions.
+- **The action** (`mkshp-dev/julesops`): dispatch, sync, and watchdog logic, run from your repository's workflows. The optional kit installer adds a config file, issue template, and instructions around it.
 - **State Machine**: Driven by GitHub labels (`status:todo`, `status:in-progress`, `status:review`, `status:blocked`, `status:failed`, `status:done`).
 
 For a detailed deep dive, see the [Architecture Documentation](docs/architecture.md) and [Product Boundaries](docs/product.md).
@@ -92,7 +124,7 @@ For a detailed deep dive, see the [Architecture Documentation](docs/architecture
 
 ## Security
 
-- **Permissions Required**: The workflow requires `contents: read` to access repository config/files, and `issues: write` to manage status labels and post comments.
+- **Permissions Required**: `contents: read` to read the config and instruction files, `issues: write` to manage status labels and post comments, `pull-requests: read` to read linked PRs, and `actions: write` only so `/jules retry` can start the workflow.
 - **Secrets Used**: Your `JULES_API_KEY` is required to communicate with Google Jules. It is never stored or exposed in logs.
 - **Data Egress**: Only code context, instructions, and issue text relevant to the selected task are sent to Google Jules. No other repository data leaves GitHub.
 - **Failure Behavior**: If dispatch fails, the issue is labeled `status:failed` with an explanatory comment; details are in the workflow run log. JulesOps never merges code itself.
@@ -109,7 +141,7 @@ Invoking Jules directly lacks queue management, leading to duplicate runs, race 
 To prevent concurrent runs from stomping on each other, keeping development serial and code changes easy to review.
 
 ### Can multiple repositories use it?
-Yes, each repository installs its own local kit or accesses the shared app listing.
+Yes. Add the workflow to each repository; each one keeps its own queue.
 
 ### Does it work on forks?
 No, for security reasons GitHub Action secrets (`JULES_API_KEY`) are not passed to pull requests from forks.

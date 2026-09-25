@@ -51,10 +51,11 @@ new_test_repo() {
   printf '%s\n' "$target"
 }
 
-# Print the resolver's value for KEY in REPO. GITHUB_OUTPUT is cleared because the
-# resolver writes there instead of stdout when it is set (as it is on Actions runners).
+# Print the resolver's value for KEY in REPO, reading REPO's .github/julesops.yml the way
+# the action does. GITHUB_OUTPUT is cleared because the resolver writes there instead of
+# stdout when it is set (as it is on Actions runners).
 resolved() {
-  (cd "$1" && GITHUB_OUTPUT="" python3 .github/resolve-config.py) | awk -v k="$2" 'index($0, k "=") == 1 { print substr($0, length(k) + 2); exit }'
+  (cd "$1" && GITHUB_OUTPUT="" python3 "$JULESOPS_KIT_ROOT/templates/resolve-config.py" 2>/dev/null) | awk -v k="$2" 'index($0, k "=") == 1 { print substr($0, length(k) + 2); exit }'
 }
 
 echo
@@ -78,11 +79,18 @@ close_on_merge=true
 jules_authors=google-labs-jules[bot]
 EOF
 
-# The state-sync workflow pipes comments through the installed parser; it must run from .github/.
-expect "installed comment parser: '/jules retry'" retry \
-  "$(printf '/jules retry' | node "$repo1/.github/jules-comment-command.js" || true)"
-expect "installed comment parser: non-command" "" \
-  "$(printf 'please retry' | node "$repo1/.github/jules-comment-command.js" || true)"
+# Installed workflows are thin wrappers around the action, pinned to this kit version.
+for workflow in jules-dispatch jules-state-sync jules-watchdog; do
+  expect "installed $workflow.yml action ref" "$JULESOPS_ACTION_REF" \
+    "$(grep -oE 'mkshp-dev/julesops@[^[:space:]]+' "$repo1/.github/workflows/$workflow.yml" | sort -u)"
+done
+for legacy in "${JULESOPS_LEGACY_FILES[@]}"; do
+  if [ -e "$repo1/$legacy" ]; then
+    fail "fresh install: $legacy not installed" "File exists"
+  else
+    pass "fresh install: $legacy not installed"
+  fi
+done
 
 echo
 echo "Suite 2: Non-default base branch"
@@ -123,6 +131,35 @@ jules_authors=google-labs-jules[bot]
 EOF
 
 echo
+echo "Suite 4b: Config file is optional"
+repo4b="$(new_test_repo)"
+rm "$repo4b/$JULESOPS_CONFIG_FILE"
+expect "no config: enabled" true "$(resolved "$repo4b" enabled)"
+expect "no config: queue_label" jules-queue "$(resolved "$repo4b" queue_label)"
+expect "no config: base_branch" main "$(resolved "$repo4b" base_branch)"
+
+echo
+echo "Suite 4c: Upgrade removes files older kits installed"
+repo4c="$(new_test_repo)"
+for legacy in "${JULESOPS_LEGACY_FILES[@]}"; do
+  printf '# JulesOps kit version: v0.4.0\n' > "$repo4c/$legacy"
+done
+printf 'keep me\n' > "$repo4c/.github/unrelated.py"
+"$scripts/install-julesops.sh" --upgrade --skip-labels "$repo4c" > /dev/null
+for legacy in "${JULESOPS_LEGACY_FILES[@]}"; do
+  if [ -e "$repo4c/$legacy" ]; then
+    fail "upgrade: removes $legacy" "File still exists"
+  else
+    pass "upgrade: removes $legacy"
+  fi
+done
+if [ -f "$repo4c/.github/unrelated.py" ]; then
+  pass "upgrade: leaves unrelated .github files alone"
+else
+  fail "upgrade: leaves unrelated .github files alone" "File was removed"
+fi
+
+echo
 echo "Suite 5: Duplicate install detection"
 repo5="$(new_test_repo)"
 if dup_output="$("$scripts/install-julesops.sh" "$repo5" < /dev/null 2>&1)"; then
@@ -130,7 +167,7 @@ if dup_output="$("$scripts/install-julesops.sh" "$repo5" < /dev/null 2>&1)"; the
 else
   pass "duplicate install: exits non-zero on non-TTY without --upgrade/--force"
 fi
-if printf '%s' "$dup_output" | grep -q "Prior JulesOps install detected"; then
+if printf '%s' "$dup_output" | grep "Prior JulesOps install detected" > /dev/null; then
   pass "duplicate install: banner message shown"
 else
   fail "duplicate install: banner message" "Expected 'Prior JulesOps install detected' in output"
