@@ -177,6 +177,18 @@ async function upsertUser(user) {
 
 // ─── CSRF state helpers ───────────────────────────────────────────────────────
 
+/**
+ * Only allow redirects to a path on this site after login. Absolute URLs,
+ * protocol-relative "//host" and "/\\host" forms, and anything else fall back to "/",
+ * so the login flow cannot be used as an open redirect.
+ */
+function safeRedirectPath(value) {
+  if (typeof value !== 'string' || !value.startsWith('/')) return '/';
+  if (value.startsWith('//') || value.startsWith('/\\')) return '/';
+  if (/[\u0000-\u001f]/.test(value)) return '/';
+  return value;
+}
+
 function createOAuthState(redirectTo = '/') {
   const state = crypto.randomBytes(16).toString('hex');
   pendingStates.set(state, { redirectTo, expiresAt: Date.now() + STATE_TTL_MS });
@@ -207,7 +219,7 @@ function handleOAuthStart(req, res) {
   }
 
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const redirectTo = url.searchParams.get('redirect_to') || '/';
+  const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'));
   const state = createOAuthState(redirectTo);
 
   const params = new URLSearchParams({
@@ -342,6 +354,7 @@ function handleLogout(req, res) {
 }
 
 module.exports = {
+  safeRedirectPath,
   handleOAuthStart,
   handleOAuthCallback,
   handleLogout,

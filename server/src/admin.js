@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const store = require('./store');
 const { processWebhookPayload } = require('./webhook-processor');
 const { requireRole } = require('./rbac');
+const { readBody } = require('./http-body');
 
 function sendJson(res, statusCode, payload) {
   const body = JSON.stringify(payload, null, 2);
@@ -15,14 +16,6 @@ function sendJson(res, statusCode, payload) {
   res.end(body);
 }
 
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', (chunk) => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
-}
 
 function parsePositiveInteger(value, fallback = null) {
   if (value == null || value === '') return fallback;

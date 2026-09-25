@@ -385,7 +385,7 @@
     function formatRelativeTime(isoString) {
       if (!isoString) return '—';
       const ms = Date.now() - new Date(isoString).getTime();
-      if (isNaN(ms)) return isoString;
+      if (isNaN(ms)) return '—';  // never echo unparsed input into innerHTML
       const minutes = Math.floor(ms / 60000);
       if (minutes < 1) return 'just now';
       if (minutes < 60) return `${minutes}m ago`;
@@ -440,15 +440,15 @@
         row.onclick = () => openDrawer(job.id);
 
         const repoTd = document.createElement('td');
-        repoTd.innerHTML = `<a href="https://github.com/${job.repo}" target="_blank" class="repo-link" onclick="event.stopPropagation()">${job.repo}</a>`;
+        repoTd.innerHTML = `<a href="https://github.com/${escapeHtml(job.repo)}" target="_blank" class="repo-link" onclick="event.stopPropagation()">${escapeHtml(job.repo)}</a>`;
         row.appendChild(repoTd);
 
         const issueTd = document.createElement('td');
-        issueTd.innerHTML = `<a href="https://github.com/${job.repo}/issues/${job.issueNum}" target="_blank" class="issue-link" onclick="event.stopPropagation()">#${job.issueNum}: ${escapeHtml(job.issueTitle)}</a>`;
+        issueTd.innerHTML = `<a href="https://github.com/${escapeHtml(job.repo)}/issues/${escapeHtml(job.issueNum)}" target="_blank" class="issue-link" onclick="event.stopPropagation()">#${escapeHtml(job.issueNum)}: ${escapeHtml(job.issueTitle)}</a>`;
         row.appendChild(issueTd);
 
         const statusTd = document.createElement('td');
-        statusTd.innerHTML = `<span class="badge badge-${job.status}">${getStatusLabel(job.status)}</span>`;
+        statusTd.innerHTML = `<span class="badge badge-${escapeHtml(job.status)}">${escapeHtml(getStatusLabel(job.status))}</span>`;
         row.appendChild(statusTd);
 
         const attemptTd = document.createElement('td');
@@ -457,7 +457,7 @@
 
         const prTd = document.createElement('td');
         if (job.prNumber) {
-          prTd.innerHTML = `<a href="https://github.com/${job.repo}/pull/${job.prNumber}" target="_blank" class="external-link" onclick="event.stopPropagation()"><i data-feather="git-pull-request" style="width:14px;height:14px;"></i> PR #${job.prNumber}</a>`;
+          prTd.innerHTML = `<a href="https://github.com/${escapeHtml(job.repo)}/pull/${escapeHtml(job.prNumber)}" target="_blank" class="external-link" onclick="event.stopPropagation()"><i data-feather="git-pull-request" style="width:14px;height:14px;"></i> PR #${escapeHtml(job.prNumber)}</a>`;
         } else if (job.branchName) {
           prTd.innerHTML = `<span style="color:var(--text-secondary);font-family:monospace;font-size:13px;">${escapeHtml(job.branchName)}</span>`;
         } else {
@@ -506,8 +506,8 @@
              <div class="attempts-list">
                ${attempts.map(a => `
                  <div class="attempt-row">
-                   <span class="attempt-num">#${a.attempt_number}</span>
-                   <span class="badge badge-${a.status === 'succeeded' ? 'done' : a.status === 'failed' ? 'failed' : 'in-progress'}">${a.status}</span>
+                   <span class="attempt-num">#${escapeHtml(a.attempt_number)}</span>
+                   <span class="badge badge-${a.status === 'succeeded' ? 'done' : a.status === 'failed' ? 'failed' : 'in-progress'}">${escapeHtml(a.status)}</span>
                    <span class="attempt-time">${formatRelativeTime(a.created_at)}</span>
                  </div>`).join('')}
              </div>`
@@ -516,17 +516,17 @@
         drawerBody.innerHTML = `
           <div class="drawer-meta">
             <div class="drawer-section-label">Status</div>
-            <span class="badge badge-${status}">${getStatusLabel(status)}</span>
+            <span class="badge badge-${escapeHtml(status)}">${escapeHtml(getStatusLabel(status))}</span>
 
             ${blockedReason ? `<div class="drawer-section-label" style="margin-top:16px;">Blocked Reason</div><p class="blocked-reason-text">${escapeHtml(blockedReason)}</p>` : ''}
 
             <div class="drawer-section-label" style="margin-top:16px;">Links</div>
             <div class="drawer-links">
-              <a href="https://github.com/${repo}/issues/${issueNum}" target="_blank" class="external-link">
-                <i data-feather="link" style="width:14px;height:14px;"></i> Issue #${issueNum}
+              <a href="https://github.com/${escapeHtml(repo)}/issues/${escapeHtml(issueNum)}" target="_blank" class="external-link">
+                <i data-feather="link" style="width:14px;height:14px;"></i> Issue #${escapeHtml(issueNum)}
               </a>
-              ${prNum ? `<a href="https://github.com/${repo}/pull/${prNum}" target="_blank" class="external-link">
-                <i data-feather="git-pull-request" style="width:14px;height:14px;"></i> PR #${prNum}
+              ${prNum ? `<a href="https://github.com/${escapeHtml(repo)}/pull/${escapeHtml(prNum)}" target="_blank" class="external-link">
+                <i data-feather="git-pull-request" style="width:14px;height:14px;"></i> PR #${escapeHtml(prNum)}
               </a>` : ''}
               ${branch ? `<span class="drawer-branch"><i data-feather="git-branch" style="width:14px;height:14px;"></i> ${escapeHtml(branch)}</span>` : ''}
             </div>
@@ -541,7 +541,7 @@
         feather.replace();
 
       } catch (err) {
-        drawerBody.innerHTML = `<div class="drawer-error"><i data-feather="alert-triangle" style="width:24px;height:24px;color:var(--color-rose);"></i><p>${err.message}</p></div>`;
+        drawerBody.innerHTML = `<div class="drawer-error"><i data-feather="alert-triangle" style="width:24px;height:24px;color:var(--color-rose);"></i><p>${escapeHtml(err.message)}</p></div>`;
         feather.replace();
       }
     }
@@ -582,9 +582,12 @@
 
     // ─── Utilities ────────────────────────────────────────────────────────────
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    // Escape any value (strings, numbers, null) for use in HTML text or a quoted attribute.
+    function escapeHtml(value) {
+      if (value === null || value === undefined) return '';
+      return String(value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     // ─── Init ─────────────────────────────────────────────────────────────────

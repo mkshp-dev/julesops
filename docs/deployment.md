@@ -70,7 +70,7 @@ settings — **do not commit `.env`**.
 |----------|-------------|
 | `DATABASE_URL` | Postgres connection string |
 | `GITHUB_APP_ID` | Numeric GitHub App ID |
-| `GITHUB_WEBHOOK_SECRET` | Webhook secret from App settings |
+| `GITHUB_WEBHOOK_SECRET` | Webhook secret from App settings. Required in production: without it, GitHub webhooks are rejected with 503. |
 | `GITHUB_PRIVATE_KEY` | PEM key (escape newlines as `\n`) or use `GITHUB_PRIVATE_KEY_PATH` |
 | `GITHUB_OAUTH_CLIENT_ID` | OAuth App client ID |
 | `GITHUB_OAUTH_CLIENT_SECRET` | OAuth App client secret |
@@ -82,7 +82,7 @@ settings — **do not commit `.env`**.
 | Variable | Description |
 |----------|-------------|
 | `STRIPE_SECRET_KEY` | Stripe secret key (`sk_test_...` or `sk_live_...`) |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret (`whsec_...`) |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret (`whsec_...`). Required in production when billing is enabled: without it, Stripe webhooks are rejected with 503. |
 | `STRIPE_PRO_PRICE_ID` | Stripe Price ID for the Pro plan |
 | `STRIPE_TEAM_PRICE_ID` | Stripe Price ID for the Team plan |
 
@@ -92,8 +92,8 @@ settings — **do not commit `.env`**.
 |----------|---------|-------------|
 | `PORT` | `3000` | HTTP listen port |
 | `HOST` | `127.0.0.1` | Bind address (set to `0.0.0.0` for containers) |
-| `NODE_ENV` | `development` | Set to `production` to enforce auth and disable demo fallbacks |
-| `CORS_ORIGIN` | `*` | Allowed origin for cross-origin requests (set to your dashboard URL in production) |
+| `NODE_ENV` | `development` | Set to `production` to enforce auth, reject unsigned webhooks, and disable demo fallbacks. Login is also required whenever `DATABASE_URL` is set. |
+| `CORS_ORIGIN` | *(unset: no cross-origin access)* | Origin allowed to call the API from another site. Not needed for the built-in dashboard, which is served by the same server. |
 
 ### Optional — Database tuning
 
