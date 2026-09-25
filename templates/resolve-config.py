@@ -1,7 +1,7 @@
 import os
 
 CONFIG_PATH = ".github/julesops.yml"
-# GitHub login(s) that open PRs and post comments on behalf of Jules (comma-separated).
+# GitHub login(s) Jules authors commits and posts comments as (comma-separated).
 DEFAULT_JULES_AUTHORS = "google-labs-jules[bot]"
 
 

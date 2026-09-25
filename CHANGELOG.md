@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `/jules retry` and `/jules requeue` failed in installed repositories because `jules-state-sync.yml` ran `scripts/comment-command.js`, which the installer never copied. The parser now ships as `.github/jules-comment-command.js`, and `validate-kit.sh` checks that every script a workflow executes is installed.
-- `require_issue_link` posted a validation warning on every human-authored pull request. It now applies only to pull requests opened by `pull_request.jules_authors` (default `google-labs-jules[bot]`).
+- `require_issue_link` posted a validation warning on every human-authored pull request. It now applies only to pull requests created by Jules: a commit authored by a `pull_request.jules_authors` login (default `google-labs-jules[bot]`) or a Jules task link in the body. The PR author is not used, because Jules opens PRs under the account of the user who started the task.
 - Any commenter could move an in-progress issue to `blocked` by posting the blocked marker. The marker is now honored only from bot accounts, `jules_authors`, or maintainers.
 - Overlapping `Jules Dispatch` runs could invoke Jules twice for the same issue. Dispatch now uses a `concurrency` group and claims the issue (`status:in-progress`) before invoking Jules.
 - Watchdog review-transition comments rendered a stray backslash (`` \`status:review\` ``).

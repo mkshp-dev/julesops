@@ -82,21 +82,30 @@ jobs:
           IS_JULES: ${{ steps.issue_meta.outputs.is_jules }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BODY: ${{ github.event.pull_request.body }}
           JULES_AUTHORS: ${{ steps.config.outputs.jules_authors }}
         run: |
           set -euo pipefail
 
-          # Only enforce the link requirement on PRs opened by Jules; human PRs are left alone.
-          is_jules_author=false
+          # Only enforce the link requirement on PRs created by Jules; human PRs are left alone.
+          # Jules opens PRs under the account of the user who started the task, so the PR
+          # author is a human. Its commits are authored by the Jules bot, and the body links
+          # the Jules task.
+          candidates="$PR_AUTHOR"$'\n'"$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER/commits" --paginate --jq '.[].author.login // empty' || true)"
+
+          is_jules_pr=false
           IFS=',' read -ra authors <<< "$JULES_AUTHORS"
           for author in "${authors[@]}"; do
             author="$(echo "$author" | xargs)"
-            if [ -n "$author" ] && [ "${author,,}" = "${PR_AUTHOR,,}" ]; then
-              is_jules_author=true
+            if [ -n "$author" ] && printf '%s\n' "${candidates,,}" | grep -qxF -- "${author,,}"; then
+              is_jules_pr=true
             fi
           done
+          if printf '%s' "$PR_BODY" | grep -q 'jules\.google\.com/task/'; then
+            is_jules_pr=true
+          fi
 
-          if [ "$REQUIRE_LINK" = "true" ] && [ "$is_jules_author" = "true" ]; then
+          if [ "$REQUIRE_LINK" = "true" ] && [ "$is_jules_pr" = "true" ]; then
             if [ "$LINK_FOUND" != "true" ] || [ "$IS_JULES" != "true" ]; then
               echo "Validation failed: PR #$PR_NUMBER must reference a valid Jules issue."
               gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \

@@ -219,7 +219,9 @@ If `true` and the pull request targets a different branch, JulesOps will:
 
 ## `pull_request.require_issue_link` — **Stable**
 
-Whether JulesOps should validate that a pull request **opened by Jules** (see `jules_authors`) contains a valid closing reference to a tracked Jules issue (e.g. `Closes #123` or `Fixes #123`). Pull requests opened by anyone else are never warned.
+Whether JulesOps should validate that a pull request **created by Jules** contains a valid closing reference to a tracked Jules issue (e.g. `Closes #123` or `Fixes #123`). Human pull requests are never warned.
+
+Jules opens pull requests under the account of the user who started the task, so the PR author is not a reliable signal. A pull request counts as created by Jules when any of its commits is authored by a `jules_authors` login, or its body links a Jules task (`jules.google.com/task/...`).
 
 If `true` and no valid link is present, JulesOps will:
 - Comment on the pull request alerting the author.
@@ -227,13 +229,13 @@ If `true` and no valid link is present, JulesOps will:
 
 ## `pull_request.jules_authors` — **Stable**
 
-Comma-separated GitHub logins that open pull requests and post comments on behalf of Jules. Default: `google-labs-jules[bot]`.
+Comma-separated GitHub logins that Jules authors commits and posts comments as. Default: `google-labs-jules[bot]`.
 
 Used to:
-- decide which pull requests `require_issue_link` applies to
+- detect pull requests created by Jules (by commit author), which `require_issue_link` applies to
 - authorize blocked-marker comments (in addition to any bot account and repository maintainers)
 
-Matching is case-insensitive. If Jules opens PRs under a different account in your setup, set this to that login.
+Matching is case-insensitive. Only change this if Jules commits under a different account in your setup.
 
 ---
 
