@@ -15,21 +15,21 @@ Current shipping status:
 
 - A GitHub repository where you want to use JulesOps.
 - A Jules API key stored as a GitHub Actions secret named `JULES_API_KEY`.
-- PowerShell 5.1+ on Windows or PowerShell Core 7+ on macOS/Linux.
-- `git` and, for label bootstrapping, the GitHub CLI (`gh`).
+- `bash` 3.2+ (Linux, macOS, or WSL on Windows), `git` 2.28+, and `python3` 3.8+.
+- Optionally the GitHub CLI (`gh`) for label bootstrapping.
 
 ### Install Steps
 
-```powershell
+```bash
 # Clone the JulesOps source kit
 git clone https://github.com/mkshp-dev/julesops.git
 cd julesops
 
 # Install into your target repository
-.\scripts\install-julesops.ps1 `
-  -TargetRepo "C:\path\to\your\repo" `
-  -BaseBranch "main" `
-  -QueueLabel "jules-queue"
+scripts/install-julesops.sh \
+  --base-branch main \
+  --queue-label jules-queue \
+  /path/to/your/repo
 ```
 
 The installer copies the following files into your repository:
@@ -41,28 +41,29 @@ The installer copies the following files into your repository:
 - `.github/jules-core.md`
 - `.github/jules-repo.md` if missing
 - `.github/resolve-config.py`
+- `.github/jules-comment-command.js`
 - `.github/ISSUE_TEMPLATE/jules-task.yml`
 
 ### Validate Installation
 
-```powershell
-.\scripts\validate-kit.ps1 -TargetRepo "C:\path\to\your\repo"
+```bash
+scripts/validate-kit.sh /path/to/your/repo
 ```
 
 ### Bootstrap Labels
 
-Label bootstrapping runs automatically at the end of `install-julesops.ps1`. If `gh` CLI is authenticated and a GitHub remote is detected, the 7 JulesOps labels are created on GitHub in the same step.
+Label bootstrapping runs automatically at the end of `install-julesops.sh`. If `gh` CLI is authenticated and a GitHub remote is detected, the 7 JulesOps labels are created on GitHub in the same step.
 
 If you want to skip label creation during install (e.g. to run it separately later):
 
-```powershell
-.\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\your\repo" -BaseBranch main -SkipLabels
+```bash
+scripts/install-julesops.sh /path/to/your/repo --base-branch main --skip-labels
 ```
 
 To run label bootstrapping manually at any time:
 
-```powershell
-.\scripts\bootstrap-labels.ps1 -TargetRepo "C:\path\to\your\repo"
+```bash
+scripts/bootstrap-labels.sh /path/to/your/repo
 ```
 
 If GitHub authentication or a GitHub remote is unavailable, the script prints a manual label checklist instead of failing.
@@ -117,11 +118,11 @@ julesops:
 
 When a new JulesOps version is released, upgrade your installation by re-running the installer:
 
-```powershell
-.\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\your\repo" -BaseBranch main -Upgrade
+```bash
+scripts/install-julesops.sh /path/to/your/repo --base-branch main --upgrade
 ```
 
-The installer refreshes JulesOps-managed workflow/template files. It preserves `.github/jules-repo.md`, and `-Upgrade` preserves `.github/julesops.yml` unless `-Force` is also provided.
+The installer refreshes JulesOps-managed workflow/template files. It preserves `.github/jules-repo.md`, and `--upgrade` preserves `.github/julesops.yml` unless `--force` is also provided.
 
 ---
 
@@ -137,6 +138,7 @@ To remove JulesOps from your repository, delete the following files:
 .github/jules-core.md
 .github/jules-repo.md
 .github/resolve-config.py
+.github/jules-comment-command.js
 .github/ISSUE_TEMPLATE/jules-task.yml
 ```
 

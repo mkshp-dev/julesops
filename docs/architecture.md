@@ -251,7 +251,7 @@ JulesOps GitHub App supports two operational modes depending on adopter preferen
 ### 10.3.1 Monitor Mode (Default / Recommended)
 - **Behavior**: The App acts purely as a monitoring, state-validation, and telemetry plane. It observes webhook events (issues, pull requests, comment creations, workflow runs) and populates the multi-repo operations dashboard, while execution remains fully managed by GitHub Actions inside the repository.
 - **Permissions**: Requires only `Read-only` contents permission (to read `.github/julesops.yml` and the instruction prompts).
-- **Upgrades**: When workflow kit updates are released, the App alerts maintainers on the dashboard that their workflows are out of date and prompts them to run `.\scripts\install-julesops.ps1 -Upgrade` locally.
+- **Upgrades**: When workflow kit updates are released, the App alerts maintainers on the dashboard that their workflows are out of date and prompts them to run `scripts/install-julesops.sh --upgrade` locally.
 
 ### 10.3.2 Auto-Upgrade/Install Mode (Opt-in)
 - **Behavior**: The App actively manages the installation and updates of the JulesOps workflows (`jules-*.yml`) and config files directly, ensuring zero-maintenance synchronization.
@@ -565,7 +565,7 @@ A `julesops/resolve-config-action` that wraps the Python resolver step. Workflow
 
 **Cons:**
 - All three workflows already resolve config in one line (`python3 .github/resolve-config.py`). There is no duplicated logic — only a repeated call to the same script.
-- Adopters pin their workflow files at install time via `-Upgrade`. A composite action reference creates a new remote dependency that must also be pinned and upgraded independently.
+- Adopters pin their workflow files at install time via `--upgrade`. A composite action reference creates a new remote dependency that must also be pinned and upgraded independently.
 - Composite actions cannot set `GITHUB_OUTPUT` from a sub-action with the same scoping behavior in all runner environments — this would require output re-mapping boilerplate.
 - Adds a new upgrade surface: adopters would need to upgrade the action reference AND the workflow files separately.
 
@@ -612,7 +612,7 @@ The first 3 steps of dispatch (checkout → resolve config → API key check →
 ### Rationale
 
 1. **The duplication is shallow.** All three workflows call the same Python script in one line. The actual logic is centralized in `resolve-config.py`, which is the right boundary — not the workflow YAML.
-2. **Extraction adds adopter upgrade complexity.** The free kit's distribution model (install files locally via `-Upgrade`) means any remote action reference is a new versioned dependency adopters must track separately.
+2. **Extraction adds adopter upgrade complexity.** The free kit's distribution model (install files locally via `--upgrade`) means any remote action reference is a new versioned dependency adopters must track separately.
 3. **The maintenance cost is low without extraction.** Each workflow is self-contained. Changes to config fields require updating `resolve-config.py` (one file) and possibly the config preflight step (added in v0.3.2). That's two files, not N workflows.
 4. **The right time to extract is post-Marketplace, when the adopter base is established.** At that point, a `uses: mkshp-dev/julesops/.github/actions/...@v2` reference with clear versioning and a documented migration path makes sense.
 
@@ -620,9 +620,9 @@ The first 3 steps of dispatch (checkout → resolve config → API key check →
 
 1. Create `actions/resolve-config/action.yml` and `actions/label-transition/action.yml` in the JulesOps repo.
 2. Version the actions alongside the kit (same semver tag).
-3. Update `install-julesops.ps1` to add `actions/` to the installed file set.
+3. Update `install-julesops.sh` to add `actions/` to the installed file set.
 4. Provide a migration note in the CHANGELOG and upgrade guide.
-5. The `-Upgrade` flag handles the file swap in adopting repos.
+5. The `--upgrade` flag handles the file swap in adopting repos.
 
 ### Action items
 

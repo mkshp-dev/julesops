@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const { parseJulesCommand } = require('../comment-command');
+const { parseJulesCommand } = require('../../templates/comment-command');
 
 function check(name, fn) {
   try {

@@ -203,6 +203,7 @@ The watchdog is currently **comment-only**. It does not automatically requeue, r
 pull_request:
   target_base_branch_only: true
   require_issue_link: true
+  jules_authors: google-labs-jules[bot]
 ```
 
 Configures validations applied when a pull request linked to a Jules issue is opened or reopened.
@@ -218,11 +219,23 @@ If `true` and the pull request targets a different branch, JulesOps will:
 
 ## `pull_request.require_issue_link` — **Stable**
 
-Whether JulesOps should validate that a pull request linked to a Jules issue contains a valid closing reference to a tracked issue (e.g. `Closes #123` or `Fixes #123`).
+Whether JulesOps should validate that a pull request **created by Jules** contains a valid closing reference to a tracked Jules issue (e.g. `Closes #123` or `Fixes #123`). Human pull requests are never warned.
+
+Jules opens pull requests under the account of the user who started the task, so the PR author is not a reliable signal. A pull request counts as created by Jules when any of its commits is authored by a `jules_authors` login, or its body links a Jules task (`jules.google.com/task/...`).
 
 If `true` and no valid link is present, JulesOps will:
 - Comment on the pull request alerting the author.
 - Halt state transitions (the issue will not transition to `review`).
+
+## `pull_request.jules_authors` — **Stable**
+
+Comma-separated GitHub logins that Jules authors commits and posts comments as. Default: `google-labs-jules[bot]`.
+
+Used to:
+- detect pull requests created by Jules (by commit author), which `require_issue_link` applies to
+- authorize blocked-marker comments (in addition to any bot account and repository maintainers)
+
+Matching is case-insensitive. Only change this if Jules commits under a different account in your setup.
 
 ---
 
@@ -297,6 +310,7 @@ Fields marked **Experimental** carry no such guarantee and adopters should expec
 | `julesops.blocked_comment.marker` | **Stable** | state-sync |
 | `julesops.pull_request.target_base_branch_only` | **Stable** | state-sync |
 | `julesops.pull_request.require_issue_link` | **Stable** | state-sync |
+| `julesops.pull_request.jules_authors` | **Stable** | state-sync |
 | `julesops.issue_completion.close_on_merge` | **Stable** | state-sync |
 | `julesops.watchdog.stale_in_progress_hours` | **Stable** | watchdog |
 | `julesops.watchdog.stale_review_hours` | **Stable** | watchdog |

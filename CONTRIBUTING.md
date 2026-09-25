@@ -6,7 +6,7 @@ Welcome to the JulesOps repository! This document contains instructions and guid
 
 * **`templates/`**: Canonical configuration templates (e.g. `julesops.yml`) and base prompt instructions (e.g. `jules-core.md`).
 * **`workflows/`**: Reusable GitHub Action workflows for orchestration (dispatching, state sync, watchdog).
-* **`scripts/`**: Utilities like `install-julesops.ps1` for target installation and `validate-kit.ps1` for kit auditing.
+* **`scripts/`**: Utilities like `install-julesops.sh` for target installation and `validate-kit.sh` for kit auditing.
 * **`docs/`**: Concept, architecture, release plan, and lifecycle specification documents.
 * **`examples/`**: Adopting repository examples (e.g. `aggregator` or `fixture-basic`).
 
@@ -22,26 +22,30 @@ When contributing changes to JulesOps workflows or templates, follow these steps
 
 ### 2. Validating the Kit
 Before staging commits, run the validation script to verify structure, schemas, and version integrity:
-```powershell
-.\scripts\validate-kit.ps1
+```bash
+scripts/validate-kit.sh
 ```
 
-### 3. Test Installation
-Verify the installer copies and configures files properly:
-1. Initialize a temporary test target directory.
-2. Run the installer:
-   ```powershell
-   .\scripts\install-julesops.ps1 -TargetRepo .\temp_target_repo -BaseBranch main
-   ```
-3. Run the validation script pointing to the target directory:
-   ```powershell
-   .\scripts\validate-kit.ps1 -TargetRepo .\temp_target_repo
-   ```
+### 3. Run the Test Suites
+The same checks run in CI on `ubuntu-latest`:
+```bash
+shellcheck -x -P scripts scripts/*.sh scripts/lib/common.sh
+scripts/test-fixture.sh          # install / upgrade / force / validate against a fixture repo
+scripts/test-workflow-logic.sh   # resolver output, defaults, comment parser, uninstall
+node scripts/__tests__/comment-command.test.js
+```
+
+To try the installer by hand, point it at any Git repository:
+```bash
+scripts/install-julesops.sh --base-branch main ./temp_target_repo
+scripts/validate-kit.sh ./temp_target_repo
+```
 
 ---
 
 ## Coding Guidelines
 
+- **Kit scripts**: Write them in bash, source `scripts/lib/common.sh`, and keep them compatible with bash 3.2 (the macOS system bash): no associative arrays, `mapfile`, or `${var,,}`. Read config through `scripts/lib/config_dump.py` so scripts and workflows parse `julesops.yml` the same way.
 - **GitHub Actions Workflows**: Minimize duplicate scripts where possible. Prefer using the unified configuration parser helper script `.github/resolve-config.py` for parsing parameters.
 - **Convention**: Adhere to [Conventional Commits](https://www.conventionalcommits.org/) standards for all commit messages.
 - **Issue Linking**: Ensure all Pull Requests link to a tracked Jules issue in the description (e.g., `Closes #123`) to satisfy strict issue validation checks.

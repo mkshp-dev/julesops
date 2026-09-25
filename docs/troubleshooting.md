@@ -30,8 +30,8 @@ This guide covers common issues and how to diagnose them. For installation steps
 
 You can also verify the secret exists by running:
 
-```powershell
-.\scripts\validate-kit.ps1 -TargetRepo "C:\path\to\target-repo"
+```bash
+scripts/validate-kit.sh /path/to/target-repo
 ```
 
 The validator will warn if `JULES_API_KEY` is not set.
@@ -42,8 +42,8 @@ The validator will warn if `JULES_API_KEY` is not set.
 
 **Fix**: Open `.github/julesops.yml` in the target repo and ensure all required fields are populated. Run:
 
-```powershell
-.\scripts\validate-kit.ps1 -TargetRepo "C:\path\to\target-repo"
+```bash
+scripts/validate-kit.sh /path/to/target-repo
 ```
 
 ### Dispatch runs but Jules does nothing visible
@@ -140,14 +140,14 @@ watchdog:
 
 **Check**: The labels must exist on GitHub exactly as configured in `.github/julesops.yml`. Run the validator:
 
-```powershell
-.\scripts\validate-kit.ps1 -TargetRepo "C:\path\to\target-repo"
+```bash
+scripts/validate-kit.sh /path/to/target-repo
 ```
 
 If labels are missing:
 
-```powershell
-.\scripts\bootstrap-labels.ps1 -TargetRepo "C:\path\to\target-repo"
+```bash
+scripts/bootstrap-labels.sh /path/to/target-repo
 ```
 
 ---
@@ -156,33 +156,33 @@ If labels are missing:
 
 ### "Prior JulesOps install detected" on first install
 
-**Symptoms**: Running `install-julesops.ps1` shows a prior install banner on what you believe is a fresh repo.
+**Symptoms**: Running `install-julesops.sh` shows a prior install banner on what you believe is a fresh repo.
 
 **Cause**: One or more JulesOps-managed files exist with a version marker. This may be from a partial previous run.
 
-**Fix**: Use `-Upgrade` to refresh managed files while preserving your config, or `-Force` to overwrite everything including `julesops.yml`.
+**Fix**: Use `--upgrade` to refresh managed files while preserving your config, or `--force` to overwrite everything including `julesops.yml`.
 
 ### Installer exits with "Non-interactive shell detected"
 
 **Symptoms**: CI or a script running the installer exits with this error.
 
-**Fix**: Always pass `-Upgrade` or `-Force` explicitly when running the installer in non-interactive contexts (CI scripts, automation).
+**Fix**: Always pass `--upgrade` or `--force` explicitly when running the installer in non-interactive contexts (CI scripts, automation).
 
-```powershell
-.\scripts\install-julesops.ps1 -TargetRepo "C:\path\to\target-repo" -BaseBranch main -Upgrade
+```bash
+scripts/install-julesops.sh /path/to/target-repo --base-branch main --upgrade
 ```
 
 ---
 
 ## Validation issues
 
-### validate-kit.ps1 fails with "Missing required kit file"
+### validate-kit.sh fails with "Missing required kit file"
 
-**Symptoms**: Running `validate-kit.ps1` from the JulesOps repo root fails.
+**Symptoms**: Running `validate-kit.sh` from the JulesOps repo root fails.
 
 **Fix**: Ensure you're running from the JulesOps repo root and the kit files are intact. A `git status` or `git pull` may be needed.
 
-### validate-kit.ps1 warns about JULES_API_KEY
+### validate-kit.sh warns about JULES_API_KEY
 
 **Symptoms**: Warning: `JULES_API_KEY secret is NOT set.`
 

@@ -26,6 +26,7 @@ julesops:
   pull_request:
     target_base_branch_only: true
     require_issue_link: true
+    jules_authors: google-labs-jules[bot]    # comma-separated logins Jules commits and comments as
 
   issue_completion:
     close_on_merge: true

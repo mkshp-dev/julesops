@@ -26,3 +26,6 @@ Thumbs.db
 .idea/
 *.suo
 *.user
+
+# Python bytecode
+__pycache__/

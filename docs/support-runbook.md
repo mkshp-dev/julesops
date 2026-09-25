@@ -22,15 +22,15 @@ When a new GitHub issue is opened:
 1. **Reproduce or confirm** the report against the latest kit version (`scripts/kit-version.txt`).
 2. **Label the issue** with one of: `bug`, `enhancement`, `question`, `documentation`, `wontfix`.
 3. **Check if it is a known issue** — search existing open issues and the CHANGELOG.
-4. **Respond** with confirmation, a workaround if one exists, or a request for more information (repo structure, kit version, PowerShell version, error output).
+4. **Respond** with confirmation, a workaround if one exists, or a request for more information (repo structure, kit version, OS and bash version, error output).
 5. **Assign a milestone** if the fix is targeted for a specific release.
 
 ### Common triage scenarios
 
 | Symptom | Likely cause | First response |
 |---|---|---|
-| `Target file already exists` on install | Prior install exists | Point to `-Upgrade` or `-Force` flags in `docs/install.md` |
-| Labels not created after install | `gh` CLI not authenticated or no GitHub remote | Point to `bootstrap-labels.ps1` docs; confirm `gh auth status` |
+| `Target file already exists` on install | Prior install exists | Point to `--upgrade` or `--force` flags in `docs/install.md` |
+| Labels not created after install | `gh` CLI not authenticated or no GitHub remote | Point to `bootstrap-labels.sh` docs; confirm `gh auth status` |
 | `JULES_API_KEY` secret not found in workflow logs | Secret not configured in repository settings | Point to GitHub docs on repository secrets |
 | Dispatch workflow exits without selecting work | `enabled: false` in config, or no `jules-queue` label on issue, or issue not using the JulesOps template | Check `julesops.yml`, label, and issue template |
 | Stale `status:in-progress` never moved by watchdog | Watchdog schedule may not have triggered; `stale_in_progress_hours` threshold not reached | Check workflow run history; confirm watchdog cron |
@@ -58,7 +58,7 @@ Because the free kit runs entirely inside the adopter's GitHub Actions environme
 1. Open a tracking issue immediately and label `bug` + `security` (if applicable).
 2. If a security issue: follow `SECURITY.md` responsible disclosure process. Do **not** disclose publicly until a fix is available.
 3. Draft a patch within 24 hours.
-4. Tag a patch release (`scripts/release-kit.ps1`) and update `CHANGELOG.md`.
+4. Tag a patch release (`scripts/release-kit.sh`) and update `CHANGELOG.md`.
 5. Post a notice on the tracking issue describing the impact and how to upgrade.
 
 #### High
@@ -78,7 +78,7 @@ Because the free kit runs entirely inside the adopter's GitHub Actions environme
 
 1. Apply the fix to `main`.
 2. Run the full release checklist: `docs/release-checklist.md`.
-3. Bump kit version: `scripts/release-kit.ps1 -Version vX.Y.Z -Date YYYY-MM-DD`.
+3. Bump kit version: `scripts/release-kit.sh vX.Y.Z YYYY-MM-DD`.
 4. Tag the release on GitHub.
 5. Update `CHANGELOG.md` with a summary of what changed and why.
 
