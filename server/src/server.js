@@ -13,7 +13,6 @@ const { handleAdminRequest } = require('./admin');
 const { requireRole, getAccessibleInstallationIds } = require('./rbac');
 const { sessionMiddleware } = require('./session');
 const { handleOAuthStart, handleOAuthCallback, handleLogout } = require('./oauth');
-const { handleCheckout, handleStripeWebhook, handleBillingPortal } = require('./billing');
 const { startAlertWorker } = require('./alerts');
 const { recordWebhookProcessing, renderMetricsText } = require('./metrics');
 const { readBody, WEBHOOK_BODY_LIMIT } = require('./http-body');
@@ -56,26 +55,6 @@ async function getAccessibleInstallationsForRequest(req) {
   if (!AUTH_REQUIRED) return null;
   if (!req.session || !req.session.userId) return [];
   return getAccessibleInstallationIds(req.session.userId, 'viewer') || [];
-}
-
-async function requireBillingAdmin(req, res, installationId) {
-  if (!AUTH_REQUIRED) return true;
-  if (!req.session) {
-    sendJson(res, 401, { ok: false, error: 'authentication required' });
-    return false;
-  }
-  if (!installationId) {
-    const installations = req.session.userId
-      ? await getAccessibleInstallationIds(req.session.userId, 'admin')
-      : [];
-    if (!installations || installations.length === 0) {
-      sendJson(res, 403, { ok: false, error: 'insufficient permissions (required: admin)' });
-      return false;
-    }
-    return true;
-  }
-  req.installationId = installationId;
-  return requireRole('admin')(req, res);
 }
 
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
@@ -342,17 +321,6 @@ async function handleRequest(req, res) {
       return;
     }
 
-    if (req.method === 'GET' && pathname === '/health/stripe') {
-      sendJson(res, 200, {
-        ok: true,
-        mode: process.env.STRIPE_SECRET_KEY ? 'configured' : 'not-configured',
-        note: process.env.STRIPE_SECRET_KEY
-          ? 'Stripe credentials present.'
-          : 'Stripe billing not yet active — set STRIPE_SECRET_KEY.',
-      });
-      return;
-    }
-
     // ── Metrics ────────────────────────────────────────────────────────────
 
     if (req.method === 'GET' && pathname === '/metrics') {
@@ -534,32 +502,6 @@ async function handleRequest(req, res) {
 
     if (req.method === 'POST' && pathname === '/api/webhooks') {
       await handleWebhook(req, res);
-      return;
-    }
-
-    // ── Billing routes ────────────────────────────────────────────────
-
-    if (req.method === 'POST' && pathname === '/billing/checkout') {
-      if (!requireHostedSession(req, res)) return;
-      const rawBody = await readBody(req);
-      let parsedBody = {};
-      try { parsedBody = rawBody.length ? JSON.parse(rawBody.toString('utf8')) : {}; } catch {}
-      const installationId = Number(parsedBody.installation_id || 0);
-      if (AUTH_REQUIRED && !(await requireBillingAdmin(req, res, installationId))) return;
-      await handleCheckout(req, res, rawBody);
-      return;
-    }
-
-    if (req.method === 'POST' && pathname === '/billing/webhook') {
-      const rawBody = await readBody(req, WEBHOOK_BODY_LIMIT);
-      await handleStripeWebhook(req, res, rawBody);
-      return;
-    }
-
-    if (req.method === 'GET' && pathname === '/billing/portal') {
-      if (!requireHostedSession(req, res)) return;
-      if (AUTH_REQUIRED && !(await requireBillingAdmin(req, res, null))) return;
-      await handleBillingPortal(req, res);
       return;
     }
 

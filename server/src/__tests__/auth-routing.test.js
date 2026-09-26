@@ -222,9 +222,4 @@ describe('hosted auth gates', () => {
     const res = await req('/admin/installations/2001', { headers: { cookie: viewerCookie, accept: 'application/json' } });
     assert.equal(res.status, 403);
   });
-
-  test('blocks viewer access to billing portal', async () => {
-    const res = await req('/billing/portal?customer_id=cus_123', { headers: { cookie: viewerCookie, accept: 'application/json' } });
-    assert.equal(res.status, 403);
-  });
 });

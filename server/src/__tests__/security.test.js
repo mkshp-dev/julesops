@@ -5,11 +5,9 @@ const assert = require('node:assert/strict');
 
 delete process.env.DATABASE_URL;
 delete process.env.GITHUB_WEBHOOK_SECRET;
-delete process.env.STRIPE_WEBHOOK_SECRET;
 delete process.env.CORS_ORIGIN;
 
 const { createServer, verifyGitHubSignature } = require('../server');
-const { verifyStripeSignature } = require('../billing');
 const { safeRedirectPath } = require('../oauth');
 const { readBody, BodyTooLargeError } = require('../http-body');
 const store = require('../store');
@@ -37,12 +35,6 @@ describe('webhook signature verification without a secret', () => {
     const result = withEnv('NODE_ENV', 'development', () => verifyGitHubSignature(Buffer.from('{}'), ''));
     assert.equal(result.ok, true);
     assert.equal(result.mode, 'disabled');
-  });
-
-  test('Stripe webhooks are rejected in production', () => {
-    const result = withEnv('NODE_ENV', 'production', () => verifyStripeSignature(Buffer.from('{}'), ''));
-    assert.equal(result.ok, false);
-    assert.equal(result.status, 503);
   });
 });
 
@@ -117,7 +109,7 @@ describe('HTTP responses', () => {
   });
 
   test('answers 413 for an oversized request body', async () => {
-    const res = await fetch(`${baseUrl}/billing/checkout`, {
+    const res = await fetch(`${baseUrl}/admin/alert-config/rules`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: 'x'.repeat(2 * 1024 * 1024),

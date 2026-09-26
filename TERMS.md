@@ -6,7 +6,7 @@
 
 ## 1. Scope
 
-These terms apply to the JulesOps free workflow kit. The free workflow kit is the only generally available JulesOps product at this time. A hosted service is in development; separate commercial terms will apply when it launches.
+These terms apply to JulesOps: the GitHub Action, the workflow kit, and the optional self-hostable server in `server/`. JulesOps is free; there is no paid tier.
 
 ---
 
@@ -35,9 +35,9 @@ Workflows run on GitHub-hosted runners and are subject to [GitHub's Terms of Ser
 
 ---
 
-## 5. Hosted service (not yet available)
+## 5. Donations
 
-The hosted GitHub App, dashboard, billing, RBAC, and multi-repo control-plane features are in development and are **not yet available**. Commercial terms covering account ownership, billing, cancellation, service availability, and data retention will be published before the hosted service launches.
+Donations through GitHub Sponsors are voluntary and do not purchase support, features, or any service level. They are subject to GitHub's Sponsors terms.
 
 ---
 
