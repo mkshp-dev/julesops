@@ -8,8 +8,8 @@ Only the latest release of JulesOps is supported for security updates:
 
 | Version | Supported |
 | --- | --- |
-| v0.5.x | Yes |
-| < v0.5 | No |
+| v0.6.x | Yes |
+| < v0.6 | No |
 
 ---
 

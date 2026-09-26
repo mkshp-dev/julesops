@@ -68,7 +68,7 @@ JulesOps handles the operational layer so you can focus on reviewing code.
        concurrency: julesops-dispatch   # never dispatch two issues at once
        steps:
          - uses: actions/checkout@v5
-         - uses: mkshp-dev/julesops@v0.5.0
+         - uses: mkshp-dev/julesops@v0.6.0
            with:
              jules-api-key: ${{ secrets.JULES_API_KEY }}
 
@@ -77,7 +77,7 @@ JulesOps handles the operational layer so you can focus on reviewing code.
        runs-on: ubuntu-latest
        steps:
          - uses: actions/checkout@v5
-         - uses: mkshp-dev/julesops@v0.5.0
+         - uses: mkshp-dev/julesops@v0.6.0
    ```
 3. **Queue a task**: label an issue `jules-queue` and describe the work in its body. JulesOps creates its labels on the first run.
 4. **Dispatch**: the next hourly run sends it to Jules, or start one now from the Actions tab (**JulesOps ➔ Run workflow**).
