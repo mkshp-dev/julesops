@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `server/` is marked experimental and parked, with its known issues listed in `server/README.md`. It isn't part of releases and isn't needed by the action.
+
 ## [0.6.0] - 2026-09-26
 
 ### Changed
