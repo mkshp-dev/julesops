@@ -118,7 +118,7 @@ JulesOps is split into two logical layers:
 - **The action** (`mkshp-dev/julesops`): dispatch, sync, and watchdog logic, run from your repository's workflows. The optional kit installer adds a config file, issue template, and instructions around it.
 - **State Machine**: Driven by GitHub labels (`status:todo`, `status:in-progress`, `status:review`, `status:blocked`, `status:failed`, `status:done`).
 
-For a detailed deep dive, see the [Architecture Documentation](docs/architecture.md) and [Product Boundaries](docs/product.md).
+The lifecycle is described in [`docs/state-machine.md`](docs/state-machine.md).
 
 ---
 
@@ -151,10 +151,14 @@ The job is labeled `status:failed` with a clear explanation, and can be retried 
 
 ---
 
+## Free and open source
+
+JulesOps is free and MIT-licensed, with no paid tier. If it saves you time, you can support its development through [GitHub Sponsors](https://github.com/sponsors/mkshp-dev).
+
+---
+
 ## Roadmap
 
 - [ ] Multiple Jules providers
-- [ ] Operational dashboard
 - [ ] Performance metrics
-- [ ] GitHub App integration
-- [ ] Cloud control plane
+- [ ] Self-hostable server with a cross-repository dashboard (in progress in [`server/`](server/README.md))

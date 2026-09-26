@@ -1,6 +1,6 @@
 # JulesOps Server
 
-The JulesOps hosted control-plane backend. Supports both a local JSON-file demo mode
+Optional, self-hostable JulesOps backend: a GitHub App webhook receiver with a cross-repository dashboard, job history, alerts, and admin tools. It is not needed to use the JulesOps action. Supports both a local JSON-file demo mode
 (no database required) and a full Postgres-backed production deployment.
 
 ## API surface
@@ -9,7 +9,6 @@ The JulesOps hosted control-plane backend. Supports both a local JSON-file demo 
 - `GET /health` — service health, storage mode, uptime
 - `GET /health/db` — database connectivity
 - `GET /health/github` — GitHub App credential presence
-- `GET /health/stripe` — Stripe credential presence
 - `GET /metrics` — Prometheus-format metrics
 
 ### Jobs & events
@@ -27,11 +26,6 @@ The JulesOps hosted control-plane backend. Supports both a local JSON-file demo 
 - `GET /auth/github/callback` — OAuth callback
 - `GET /auth/logout` — destroy session
 - `GET /api/me` — current authenticated user
-
-### Billing
-- `POST /billing/checkout` — create Stripe Checkout session
-- `POST /billing/webhook` — handle Stripe events
-- `GET /billing/portal` — redirect to Stripe Customer Portal
 
 ### Admin
 - `GET /admin/installations/:installation_id` — installation overview, repositories, jobs, and failed events
@@ -94,8 +88,6 @@ Key variables:
 | `GITHUB_OAUTH_CLIENT_ID` | *(unset)* | GitHub OAuth App client ID |
 | `GITHUB_OAUTH_CLIENT_SECRET` | *(unset)* | GitHub OAuth App client secret |
 | `SESSION_SECRET` | *(unset)* | Session signing secret |
-| `STRIPE_SECRET_KEY` | *(unset)* | Stripe secret key |
-| `STRIPE_WEBHOOK_SECRET` | *(unset)* | Stripe webhook signing secret. Unset: Stripe webhooks are rejected in production. |
 | `CORS_ORIGIN` | *(unset)* | Origin allowed to call the API cross-site. Unset: no CORS headers. |
 | `SENDGRID_API_KEY` | *(unset)* | SendGrid API key for alert email delivery |
 | `ALERT_EMAIL_FROM` | *(unset)* | Verified sender address for alert emails |
@@ -106,5 +98,7 @@ Key variables:
 
 ## Deployment
 
-See [`docs/deployment.md`](../docs/deployment.md) for step-by-step production deployment
-instructions (Render, Railway, Fly.io, Neon Postgres).
+1. Create a GitHub App (webhook URL `https://<your-host>/api/webhooks`, a webhook secret, and a private key) with read access to metadata and contents and read & write access to issues and pull requests. Subscribe it to `issues`, `pull_request`, `issue_comment`, `installation`, and `installation_repositories`.
+2. Provision Postgres and run `npm run migrate` with `DATABASE_URL` set. Migrations are tracked in a `_migrations` table, so re-running is safe.
+3. Set `NODE_ENV=production`, `HOST=0.0.0.0` (in containers), `APP_BASE_URL`, `SESSION_SECRET`, the GitHub App variables above (or `GITHUB_PRIVATE_KEY_PATH` for a key file), and `PGSSLMODE=require` for TLS-only databases. See `.env.example` at the repository root for every variable.
+4. Start with `npm start` and check `GET /health` and `GET /health/db`.

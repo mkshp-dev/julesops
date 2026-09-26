@@ -9,12 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **A blocked issue no longer stops the queue.** Only `in-progress` and `review` issues hold it; a blocked issue waits for a maintainer while the next queued issue is dispatched. Set `queue.blocked_holds_queue: true` for the previous behavior.
+- **JulesOps is free, with no paid tier.** Optional donations go through GitHub Sponsors (`.github/FUNDING.yml`). The server in `server/` is now an optional self-hostable backend; `PRIVACY.md` and `TERMS.md` no longer describe a commercial hosted service.
+- Server tests run against a temporary store; `server/data/store.json` is no longer tracked. CI runs the server unit tests, and Dependabot checks action and npm updates weekly.
 
 ### Added
 - `watchdog.fail_in_progress_hours` (default 72): the watchdog marks an issue failed once it has been in-progress that long, with a comment explaining how to retry, so a stuck task can't hold the queue forever. Measured from when the in-progress label was applied, not `updatedAt`, which every comment (including the watchdog's own reminders) resets. `0` disables it.
 - `queue.max_attempts` (default 3): `/jules retry` refuses to requeue an issue that has already been dispatched that many times and asks the maintainer to clarify it first; `/jules retry --force` goes past the limit. `0` means no limit.
+
+### Removed
+- Stripe billing from the server: the `/billing/*` routes, `GET /health/stripe`, and the `STRIPE_*` variables. Migration `006_drop_billing.sql` drops the `subscriptions` table and `installation_plans` view.
+- Internal planning and development documents from `docs/` (architecture, product scope, beta and E2E reports, Marketplace listing, release checklist, support runbook, deployment and monitoring guides). Server deployment steps are now in `server/README.md`.
+
 ### Security
-- The GitHub and Stripe webhook endpoints no longer skip signature checks in production when their secret is unset; they reject with 503 instead. Local demo mode still accepts unsigned webhooks, with a startup warning.
+- The GitHub webhook endpoint no longer skips signature checks in production when its secret is unset; it rejects with 503 instead. Local demo mode still accepts unsigned webhooks, with a startup warning.
 - Login after OAuth only redirects to paths on the same site; `redirect_to` could previously send a freshly logged-in user to any URL.
 - Request bodies are capped (25 MB for webhooks, matching GitHub's payload limit; 1 MB otherwise) and answered with 413, instead of being buffered without limit.
 - API errors no longer return internal error messages to clients.
@@ -26,9 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hosted RBAC looked up memberships by GitHub id, but memberships reference `users.id` (a UUID), so every permission check would fail against Postgres. Sessions now carry `userId`.
 - Email alerts reported "HTTP undefined" instead of the real error when SendGrid was unreachable.
 - The alert worker read `server/data/store.json` directly, ignoring `JULESOPS_DATA_DIR`.
-
-### Changed
-- Server tests run against a temporary store; `server/data/store.json` is no longer tracked. CI runs the server unit tests, and Dependabot checks action and npm updates weekly.
 
 ## [0.5.0] - 2026-09-25
 

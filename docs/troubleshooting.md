@@ -13,7 +13,7 @@ This guide covers common issues and how to diagnose them. For installation steps
 **Check:**
 
 1. The issue has **both** the queue label (`jules-queue`) and the todo status label (`status:todo`).
-2. No other issue is currently in `status:in-progress`, `status:review`, or `status:blocked` — dispatch is intentionally gated to one active job.
+2. No other issue is currently in `status:in-progress` or `status:review` — dispatch is intentionally gated to one active job. A `status:blocked` issue also holds the queue if `queue.blocked_holds_queue: true`.
 3. `Jules Dispatch` is enabled in `.github/julesops.yml` (`julesops.enabled: true`).
 4. The workflow ran at all — check the **Actions** tab for `Jules Dispatch` run history.
 5. The config resolver step ran without errors. Check the `Resolve JulesOps configuration` step output.

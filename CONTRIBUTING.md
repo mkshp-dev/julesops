@@ -7,7 +7,9 @@ Welcome to the JulesOps repository! This document contains instructions and guid
 * **`templates/`**: Canonical configuration templates (e.g. `julesops.yml`) and base prompt instructions (e.g. `jules-core.md`).
 * **`workflows/`**: Reusable GitHub Action workflows for orchestration (dispatching, state sync, watchdog).
 * **`scripts/`**: Utilities like `install-julesops.sh` for target installation and `validate-kit.sh` for kit auditing.
-* **`docs/`**: Concept, architecture, release plan, and lifecycle specification documents.
+* **`docs/`**: User documentation: install guide, config reference, state machine, and troubleshooting.
+* **`src/`**: Scripts the action (`action.yml`) runs for dispatch, sync, and watchdog.
+* **`server/`**: Optional self-hostable backend and dashboard (see `server/README.md`).
 * **`examples/`**: Adopting repository examples (e.g. `aggregator` or `fixture-basic`).
 
 ---

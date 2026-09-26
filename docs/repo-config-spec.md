@@ -319,7 +319,6 @@ See `examples/aggregator/julesops.yml` for a concrete config example based on an
 All fields marked **Stable** in this document are part of the v1 free-core config contract. They:
 
 - Are consumed by the shipping workflow kit (dispatch, state-sync, watchdog)
-- Have been validated across 5 external repositories in the beta pass (see `docs/beta-report.md`)
 - Will not change key names, nesting, or semantics without a major version bump
 - Have defaults in `templates/resolve-config.py`, so the config file itself is optional
 

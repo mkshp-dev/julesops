@@ -81,7 +81,7 @@ async function removeOrSuspendInstallation(installationId, suspend = false) {
       [installationId],
     );
   } else {
-    // Cascade deletes repositories/memberships/subscriptions via FK constraints
+    // Cascade deletes repositories/memberships via FK constraints
     await db.query(`DELETE FROM installations WHERE id = $1`, [installationId]);
   }
 }

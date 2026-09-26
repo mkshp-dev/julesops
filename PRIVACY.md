@@ -2,7 +2,7 @@
 
 **Last updated: 2026-07-08**
 
-This policy describes how JulesOps handles data. It covers the free workflow kit, which is the only generally available product at this time.
+This policy describes how JulesOps handles data. It covers the JulesOps GitHub Action and workflow kit.
 
 ---
 
@@ -27,14 +27,14 @@ The free workflow kit runs entirely inside GitHub Actions within your own reposi
 
 - Collect analytics or telemetry from the free kit
 - Transmit issue, PR, or repository data to JulesOps-operated servers
-- Store payment data (the free kit has no paid features)
+- Collect or store payment data (JulesOps is free; optional donations go through GitHub Sponsors and are subject to GitHub's terms)
 - Set cookies or track users
 
 ---
 
-## 3. Hosted service
+## 3. Self-hosted server
 
-A hosted GitHub App, dashboard, billing, and multi-repo control plane are in development and are **not yet available**. When a hosted service launches, this policy will be updated before launch to cover the data collected and how it is used.
+The optional server in `server/` is software you run yourself. Its data stays on the infrastructure you deploy it to; JulesOps does not operate a hosted service.
 
 ---
 
