@@ -7,15 +7,14 @@ function parseJulesCommand(input) {
     return null;
   }
 
+  // Exact commands only: `/jules retry` or `/jules requeue`, optionally followed by
+  // `--force` to go past the queue.max_attempts limit. Prints e.g. "retry" or "retry --force".
   const normalized = input.trim().toLowerCase().replace(/\s+/g, ' ');
-  if (normalized === '/jules retry') {
-    return 'retry';
+  const match = /^\/jules (retry|requeue)( --force)?$/.exec(normalized);
+  if (!match) {
+    return null;
   }
-  if (normalized === '/jules requeue') {
-    return 'requeue';
-  }
-
-  return null;
+  return match[2] ? `${match[1]} --force` : match[1];
 }
 
 if (require.main === module) {

@@ -12,10 +12,15 @@ open_jules_issues="$(gh issue list --repo "$REPO" --state open --label "$JULESOP
   --limit 1000 --json number,createdAt,labels)"
 statuses_json="$(status_labels | jq -R . | jq -s .)"
 
-# Only one Jules issue is worked at a time: in-progress, review, or blocked holds the queue.
-active_issue="$(echo "$open_jules_issues" | jq -r \
-  --arg a "$JULESOPS_STATUS_IN_PROGRESS" --arg b "$JULESOPS_STATUS_REVIEW" --arg c "$JULESOPS_STATUS_BLOCKED" \
-  '[.[] | select(any(.labels[]; .name == $a or .name == $b or .name == $c))] | sort_by(.number) | .[0].number // empty')"
+# Only one Jules issue is worked at a time. In-progress and review hold the queue: Jules is
+# working, or its PR is open and could conflict with the next task. Blocked means Jules has
+# stopped and is waiting on a human, so it only holds the queue with blocked_holds_queue: true.
+holding="$(jq -n --arg a "$JULESOPS_STATUS_IN_PROGRESS" --arg b "$JULESOPS_STATUS_REVIEW" '[$a, $b]')"
+if [ "${JULESOPS_BLOCKED_HOLDS_QUEUE:-false}" = "true" ]; then
+  holding="$(echo "$holding" | jq --arg c "$JULESOPS_STATUS_BLOCKED" '. + [$c]')"
+fi
+active_issue="$(echo "$open_jules_issues" | jq -r --argjson holding "$holding" \
+  '[.[] | select(any(.labels[]; .name as $n | $holding | any(. == $n)))] | sort_by(.number) | .[0].number // empty')"
 if [ -n "$active_issue" ]; then
   echo "Issue #$active_issue is already active; not dispatching another."
   output has_active true

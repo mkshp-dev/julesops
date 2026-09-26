@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **A blocked issue no longer stops the queue.** Only `in-progress` and `review` issues hold it; a blocked issue waits for a maintainer while the next queued issue is dispatched. Set `queue.blocked_holds_queue: true` for the previous behavior.
+
+### Added
+- `watchdog.fail_in_progress_hours` (default 72): the watchdog marks an issue failed once it has been in-progress that long, with a comment explaining how to retry, so a stuck task can't hold the queue forever. Measured from when the in-progress label was applied, not `updatedAt`, which every comment (including the watchdog's own reminders) resets. `0` disables it.
+- `queue.max_attempts` (default 3): `/jules retry` refuses to requeue an issue that has already been dispatched that many times and asks the maintainer to clarify it first; `/jules retry --force` goes past the limit. `0` means no limit.
 ### Security
 - The GitHub and Stripe webhook endpoints no longer skip signature checks in production when their secret is unset; they reject with 503 instead. Local demo mode still accepts unsigned webhooks, with a startup warning.
 - Login after OAuth only redirects to paths on the same site; `redirect_to` could previously send a freshly logged-in user to any URL.

@@ -147,7 +147,7 @@ Yes. Add the workflow to each repository; each one keeps its own queue.
 No, for security reasons GitHub Action secrets (`JULES_API_KEY`) are not passed to pull requests from forks.
 
 ### What happens if Jules is unavailable?
-The job is labeled `status:failed` with a clear explanation, and can be retried later using `/jules retry`.
+The job is labeled `status:failed` with a clear explanation, and can be retried later using `/jules retry`. If Jules accepts a task but never opens a pull request, the watchdog marks the issue failed after 72 hours so the queue keeps moving. After 3 attempts, `/jules retry --force` is needed, to avoid retrying a task that keeps failing.
 
 ---
 

@@ -106,6 +106,30 @@ In other words, `max_active_jobs` is currently more of a config declaration than
 
 That is acceptable for v1, but the eventual goal is for the workflow kit or future control plane to honor values greater than 1 explicitly.
 
+## `queue.blocked_holds_queue` — **Stable**
+
+```yaml
+queue:
+  blocked_holds_queue: false
+```
+
+Whether a `blocked` issue stops dispatch. Default `false`: a blocked issue means Jules has stopped and is waiting on a human, so the next queued issue is dispatched while it waits. The blocked issue keeps its label and comment for a maintainer to pick up.
+
+`in_progress` and `review` always hold the queue: Jules is working, or its pull request is open and could conflict with the next task.
+
+Set `true` for the earlier behavior, where any blocked issue stops all dispatch until a maintainer acts.
+
+## `queue.max_attempts` — **Stable**
+
+```yaml
+queue:
+  max_attempts: 3
+```
+
+How many times an issue can be dispatched before `/jules retry` (or `/jules requeue`) refuses to requeue it. Attempts are counted from JulesOps's dispatch comments on the issue. At the limit, JulesOps explains why and asks the maintainer to clarify the issue, then comment `/jules retry --force` to dispatch it anyway.
+
+`0` means no limit. Moving an issue back to `todo` by hand is not limited.
+
 ---
 
 # 4. `states` — **Stable**
@@ -186,9 +210,10 @@ If `false`, the workflow may still mark the issue `done` but leave the issue ope
 watchdog:
   stale_in_progress_hours: 24
   stale_review_hours: 72
+  fail_in_progress_hours: 72
 ```
 
-Thresholds used by `Jules Watchdog` to decide when an issue should receive a stale reminder comment.
+Thresholds used by `Jules Watchdog` for stale reminders and for failing stuck issues.
 
 ## `watchdog.stale_in_progress_hours`
 How long an issue may remain in `in_progress` without GitHub activity before the watchdog comments.
@@ -196,8 +221,12 @@ How long an issue may remain in `in_progress` without GitHub activity before the
 ## `watchdog.stale_review_hours`
 How long an issue may remain in `review` without GitHub activity before the watchdog comments.
 
-### Current v1 behavior
-The watchdog is currently **comment-only**. It does not automatically requeue, relabel, or close issues.
+## `watchdog.fail_in_progress_hours`
+How long an issue may stay `in_progress` before the watchdog marks it `failed`, with a comment explaining why and how to `/jules retry`. This frees the queue when Jules never opens a pull request or reports being blocked (for example, the Jules task died). Measured from when the in-progress label was applied, so comments on the issue don't reset it. `0` disables it. Default `72`.
+
+### Other watchdog behavior
+- An in-progress issue whose linked pull request is already open is moved to `review`.
+- Reminders (at most one per issue per 24 hours) are comments only. Issues in `review` are never failed automatically: reviewing is the maintainer's call.
 
 # 9. `pull_request` — **Stable**
 
@@ -306,6 +335,8 @@ Fields marked **Experimental** carry no such guarantee and adopters should expec
 | `julesops.repository.base_branch` | **Stable** | dispatch, state-sync |
 | `julesops.queue.queue_label` | **Stable** | dispatch, state-sync, watchdog |
 | `julesops.queue.max_active_jobs` | **Experimental** | _(declared only; single-job enforcement)_ |
+| `julesops.queue.blocked_holds_queue` | **Stable** | dispatch |
+| `julesops.queue.max_attempts` | **Stable** | sync (`/jules retry`) |
 | `julesops.states.*` (6 fields) | **Stable** | dispatch, state-sync, watchdog |
 | `julesops.instructions.core` | **Stable** | dispatch |
 | `julesops.instructions.repo` | **Stable** | dispatch |
@@ -316,5 +347,6 @@ Fields marked **Experimental** carry no such guarantee and adopters should expec
 | `julesops.issue_completion.close_on_merge` | **Stable** | state-sync |
 | `julesops.watchdog.stale_in_progress_hours` | **Stable** | watchdog |
 | `julesops.watchdog.stale_review_hours` | **Stable** | watchdog |
+| `julesops.watchdog.fail_in_progress_hours` | **Stable** | watchdog |
 | `retry.*` | **Experimental** | _(not yet implemented)_ |
 | `completion.*` | **Experimental** | _(not yet implemented)_ |

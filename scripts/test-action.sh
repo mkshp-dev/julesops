@@ -22,7 +22,8 @@ fail() { echo "  [FAIL] $1"; echo "         $2"; failed=$((failed + 1)); }
 # --- gh stub ---
 # Reads come from $FIXTURES/<key>.json, where <key> is the API path with / replaced by _
 # (e.g. repos_o_r_issues_7_labels), or "<command>_<subcommand>" (e.g. issue_list).
-# --jq is applied to the fixture. Every call is appended to $GH_LOG; PUT bodies are
+# `issue list --label L` prefers issue_list__L.json when it exists. --jq is applied to the
+# fixture with compact output, one value per line, like the real gh. Every call is appended to $GH_LOG; PUT bodies are
 # copied to $FIXTURES/../put-<key>.json.
 mkdir -p "$work_dir/bin"
 cat > "$work_dir/bin/gh" <<'STUB'
@@ -44,9 +45,12 @@ if [ "${args[0]}" = "api" ]; then
   done
 else
   key="${args[0]}_${args[1]}"
+  label=""
   for ((i = 0; i < ${#args[@]}; i++)); do
     if [ "${args[$i]}" = "--jq" ]; then jq_expr="${args[$((i + 1))]}"; fi
+    if [ "${args[$i]}" = "--label" ]; then label="${args[$((i + 1))]}"; fi
   done
+  if [ -n "$label" ] && [ -f "$FIXTURES/${key}__$label.json" ]; then key="${key}__$label"; fi
 fi
 if [ "$method" != "GET" ]; then
   cp "$input" "$FIXTURES/../put-$key.json"
@@ -58,7 +62,7 @@ esac
 fixture="$FIXTURES/$key.json"
 [ -f "$fixture" ] || fixture=/dev/null
 if [ -n "$jq_expr" ]; then
-  jq -r "$jq_expr" "$fixture"
+  jq -r -c "$jq_expr" "$fixture"
 else
   cat "$fixture"
 fi
@@ -89,6 +93,8 @@ new_case() {
   : > "$GITHUB_OUTPUT"
 }
 fixture() { cat > "$FIXTURES/$1.json"; }
+hours_ago() { python3 -c "import datetime,sys; print((datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=float(sys.argv[1]))).strftime('%Y-%m-%dT%H:%M:%SZ'))" "$1"; }
+run_py() { (cd "$case_dir" && python3 "$src/$1") > "$case_dir/stdout" 2>&1; }
 labels_fixture() {  # labels_fixture ISSUE LABEL...
   local issue="$1"; shift
   printf '%s\n' "$@" | jq -R '{name: .}' | jq -s . > "$FIXTURES/repos_o_r_issues_${issue}_labels.json"
@@ -137,6 +143,20 @@ EOF
 run dispatch-select.sh
 expect_eq "an active issue holds the queue" "true:9" "$(output_of has_active):$(output_of active_issue)"
 expect_eq "no issue selected while one is active" "" "$(output_of issue_number)"
+
+new_case
+fixture issue_list <<'EOF'
+[{"number": 9, "createdAt": "2026-01-01T00:00:00Z", "labels": [{"name": "jules-queue"}, {"name": "status:blocked"}]},
+ {"number": 10, "createdAt": "2026-01-02T00:00:00Z", "labels": [{"name": "jules-queue"}, {"name": "status:todo"}]}]
+EOF
+fixture issue_view <<< '{"title": "t", "body": "b", "url": "u"}'
+run dispatch-select.sh
+expect_eq "a blocked issue does not hold the queue by default" 10 "$(output_of issue_number)"
+export JULESOPS_BLOCKED_HOLDS_QUEUE=true
+: > "$GITHUB_OUTPUT"
+run dispatch-select.sh
+export JULESOPS_BLOCKED_HOLDS_QUEUE=false
+expect_eq "blocked_holds_queue: true makes a blocked issue hold the queue" "true:9" "$(output_of has_active):$(output_of active_issue)"
 
 new_case
 fixture issue_list <<< '[]'
@@ -258,6 +278,97 @@ new_case
 comment_event "please /jules retry this" "maintainer" User OWNER status:failed
 run sync-comment.sh
 expect_not_logged "comments that are not exact commands are ignored" "workflow run"
+
+echo
+echo "retry cap (queue.max_attempts)"
+
+dispatched_comments() {  # dispatched_comments ISSUE COUNT [legacy]
+  local body="Jules has been successfully dispatched to work on this issue. <!-- julesops:dispatched -->"
+  if [ "${3:-}" = "legacy" ]; then body="Jules has been successfully dispatched to work on this issue. Transitioning status to \`status:in-progress\`."; fi
+  jq -n --arg body "$body" --argjson n "$2" '[range($n) | {body: $body}] + [{body: "unrelated comment"}]' \
+    > "$FIXTURES/repos_o_r_issues_$1_comments.json"
+}
+
+new_case
+comment_event "/jules retry" "maintainer" User OWNER status:failed
+labels_fixture 7 jules-queue status:failed
+dispatched_comments 7 3
+run sync-comment.sh
+expect_eq "/jules retry at the attempt limit does not requeue" "" "$(put_labels 7)"
+expect_logged "/jules retry at the limit explains how to force it" "/jules retry --force"
+
+new_case
+comment_event "/jules retry --force" "maintainer" User OWNER status:failed
+labels_fixture 7 jules-queue status:failed
+dispatched_comments 7 3
+run sync-comment.sh
+expect_eq "/jules retry --force goes past the limit" "jules-queue,status:todo" "$(put_labels 7)"
+
+new_case
+comment_event "/jules retry" "maintainer" User OWNER status:failed
+labels_fixture 7 jules-queue status:failed
+dispatched_comments 7 2
+run sync-comment.sh
+expect_eq "/jules retry under the limit requeues" "jules-queue,status:todo" "$(put_labels 7)"
+
+new_case
+comment_event "/jules retry" "maintainer" User OWNER status:failed
+labels_fixture 7 jules-queue status:failed
+dispatched_comments 7 3 legacy
+run sync-comment.sh
+expect_eq "dispatch comments from older kits count toward the limit" "" "$(put_labels 7)"
+
+new_case
+comment_event "/jules retry" "maintainer" User OWNER status:failed
+labels_fixture 7 jules-queue status:failed
+dispatched_comments 7 9
+export JULESOPS_MAX_ATTEMPTS=0
+run sync-comment.sh
+export JULESOPS_MAX_ATTEMPTS=3
+expect_eq "max_attempts: 0 means no limit" "jules-queue,status:todo" "$(put_labels 7)"
+
+new_case
+comment_event "/jules retry --force" "drive-by" User NONE status:failed
+run sync-comment.sh
+expect_eq "--force does not bypass the maintainer check" "" "$(put_labels 7)"
+
+echo
+echo "watchdog.py"
+
+watchdog_case() {  # watchdog_case LABEL_APPLIED_HOURS_AGO UPDATED_HOURS_AGO
+  new_case
+  jq -n --arg u "$(hours_ago "$2")" '[{number: 7, updatedAt: $u}]' > "$FIXTURES/issue_list__status:in-progress.json"
+  jq -n --arg t "$(hours_ago "$1")" '[{event: "labeled", label: {name: "status:in-progress"}, created_at: $t}]' \
+    > "$FIXTURES/repos_o_r_issues_7_events.json"
+  labels_fixture 7 jules-queue status:in-progress
+}
+
+watchdog_case 100 1
+run_py watchdog.py
+expect_eq "in-progress past fail_in_progress_hours is marked failed" "jules-queue,status:failed" "$(put_labels 7)"
+expect_logged "the failure comment tells maintainers how to retry" "/jules retry"
+if grep -q "marking it failed" "$case_dir/stdout"; then
+  pass "escalation uses the label time, not updatedAt (recent comments don't reset it)"
+else
+  fail "escalation uses the label time, not updatedAt" "$(cat "$case_dir/stdout")"
+fi
+
+watchdog_case 30 30
+run_py watchdog.py
+expect_eq "in-progress under the limit is not failed" "" "$(put_labels 7)"
+expect_logged "in-progress past stale_in_progress_hours still gets a reminder" "issue comment 7"
+
+watchdog_case 100 100
+export JULESOPS_FAIL_IN_PROGRESS_HOURS=0
+run_py watchdog.py
+export JULESOPS_FAIL_IN_PROGRESS_HOURS=72
+expect_eq "fail_in_progress_hours: 0 disables escalation" "" "$(put_labels 7)"
+
+watchdog_case 100 1
+export JULESOPS_DRY_RUN=true
+run_py watchdog.py
+export JULESOPS_DRY_RUN=false
+expect_eq "dry run does not mark issues failed" "" "$(put_labels 7)"
 
 echo
 echo "dry run"
