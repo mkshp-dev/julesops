@@ -1,6 +1,18 @@
-# JulesOps Server
+# JulesOps Server (experimental)
 
-Optional, self-hostable JulesOps backend: a GitHub App webhook receiver with a cross-repository dashboard, job history, alerts, and admin tools. It is not needed to use the JulesOps action. Supports both a local JSON-file demo mode
+> **Status: parked.** This is an unmaintained prototype. It isn't part of JulesOps releases, isn't deployed anywhere, and isn't needed to use the JulesOps action, which keeps all state in GitHub labels. Use it for experiments only.
+>
+> Known issues:
+> - Every issue in an installed repository becomes a job, including issues that aren't Jules tasks; an issue without a status label counts as queued.
+> - When a pull request links an issue, the job's title is replaced with "Linked PR #N".
+> - "Stale Reviews" counts every issue in review, not only stale ones.
+> - Retries aren't recorded, so every job shows attempt 1 and the attempt history is empty.
+> - Only the default `status:*` label names are recognized; custom names from `julesops.yml` are ignored.
+> - Any comment containing `/retry` or `/requeue` marks a job queued, with no check of the author.
+> - The dashboard is unstyled at `/dashboard` without a trailing slash (use `/dashboard/`), and it stays on "Connecting…" if its icon script from unpkg.com fails to load.
+> - The dashboard is read-only; it has no retry or requeue actions.
+
+A GitHub App webhook receiver with a cross-repository dashboard, job history, alerts, and admin tools. Supports both a local JSON-file demo mode
 (no database required) and a full Postgres-backed production deployment.
 
 ## API surface

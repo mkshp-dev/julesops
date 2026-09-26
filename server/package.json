@@ -2,7 +2,7 @@
   "name": "julesops-server",
   "version": "0.2.0",
   "private": true,
-  "description": "JulesOps hosted control-plane backend",
+  "description": "Experimental JulesOps backend and dashboard prototype (parked)",
   "scripts": {
     "start": "node src/server.js",
     "smoke": "node scripts/smoke-test.js",

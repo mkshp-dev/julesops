@@ -161,4 +161,4 @@ JulesOps is free and MIT-licensed, with no paid tier. If it saves you time, you 
 
 - [ ] Multiple Jules providers
 - [ ] Performance metrics
-- [ ] Self-hostable server with a cross-repository dashboard (in progress in [`server/`](server/README.md))
+- [ ] Cross-repository dashboard. An experimental, unmaintained prototype lives in [`server/`](server/README.md); it isn't part of any release.
