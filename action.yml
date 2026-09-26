@@ -192,7 +192,7 @@ runs:
           case ",$MODES," in
             *,dispatch,*)
               if [ "$HAS_ACTIVE" = "true" ]; then
-                echo "🟡 Dispatch skipped: issue #$ACTIVE_ISSUE is already active (in-progress, review, or blocked)."
+                echo "🟡 Dispatch skipped: issue #$ACTIVE_ISSUE is already active and holds the queue."
               elif [ "$HAS_TODO" = "true" ] && [ "$DRY_RUN" = "true" ]; then
                 echo "🔍 Would dispatch issue #$ISSUE."
               elif [ "$HAS_TODO" = "true" ]; then
