@@ -73,6 +73,10 @@ function getStripe() {
 function verifyStripeSignature(rawBody, signatureHeader) {
   const webhookSecret = getWebhookSecret();
   if (!webhookSecret) {
+    // Never accept unsigned Stripe events in production; local demo mode may skip verification.
+    if (process.env.NODE_ENV === 'production') {
+      return { ok: false, status: 503, reason: 'webhook verification is not configured (STRIPE_WEBHOOK_SECRET)' };
+    }
     return { ok: true, mode: 'disabled' };
   }
   if (!signatureHeader) {
@@ -239,7 +243,7 @@ async function handleStripeWebhook(req, res, rawBody) {
 
   if (!verification.ok) {
     console.warn('[billing] Stripe signature verification failed:', verification.reason);
-    res.writeHead(400, { 'content-type': 'application/json' });
+    res.writeHead(verification.status || 400, { 'content-type': 'application/json' });
     res.end(JSON.stringify({ ok: false, error: verification.reason }));
     return;
   }

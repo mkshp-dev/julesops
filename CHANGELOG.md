@@ -13,6 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `watchdog.fail_in_progress_hours` (default 72): the watchdog marks an issue failed once it has been in-progress that long, with a comment explaining how to retry, so a stuck task can't hold the queue forever. Measured from when the in-progress label was applied, not `updatedAt`, which every comment (including the watchdog's own reminders) resets. `0` disables it.
 - `queue.max_attempts` (default 3): `/jules retry` refuses to requeue an issue that has already been dispatched that many times and asks the maintainer to clarify it first; `/jules retry --force` goes past the limit. `0` means no limit.
+### Security
+- The GitHub and Stripe webhook endpoints no longer skip signature checks in production when their secret is unset; they reject with 503 instead. Local demo mode still accepts unsigned webhooks, with a startup warning.
+- Login after OAuth only redirects to paths on the same site; `redirect_to` could previously send a freshly logged-in user to any URL.
+- Request bodies are capped (25 MB for webhooks, matching GitHub's payload limit; 1 MB otherwise) and answered with 413, instead of being buffered without limit.
+- API errors no longer return internal error messages to clients.
+- CORS is off unless `CORS_ORIGIN` is set (was `*`).
+- Login is required whenever `DATABASE_URL` is set, not only when `NODE_ENV=production`.
+- The dashboard escapes every value it renders (repository names, statuses, numbers, dates, error messages); values containing HTML could previously inject markup.
+
+### Fixed
+- Hosted RBAC looked up memberships by GitHub id, but memberships reference `users.id` (a UUID), so every permission check would fail against Postgres. Sessions now carry `userId`.
+- Email alerts reported "HTTP undefined" instead of the real error when SendGrid was unreachable.
+- The alert worker read `server/data/store.json` directly, ignoring `JULESOPS_DATA_DIR`.
+
+### Changed
+- Server tests run against a temporary store; `server/data/store.json` is no longer tracked. CI runs the server unit tests, and Dependabot checks action and npm updates weekly.
 
 ## [0.5.0] - 2026-09-25
 

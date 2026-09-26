@@ -12,6 +12,10 @@ const store = require('../store');
 const rbac = require('../rbac');
 const { createSession } = require('../session');
 
+// users.id values (UUIDs); memberships reference these, not GitHub ids.
+const VIEWER_ID = '00000000-0000-4000-8000-000000000099';
+const ADMIN_ID = '00000000-0000-4000-8000-000000000100';
+
 const jobs = [
   {
     id: 'job-1',
@@ -51,6 +55,11 @@ let baseUrl;
 let viewerCookie;
 let adminCookie;
 
+// Whitespace-normalized SQL, so reformatting a query doesn't break the fakes below.
+function sqlText(text) {
+  return text.replace(/\s+/g, ' ');
+}
+
 function makeJob(repo, id) {
   return jobs.find((job) => job.id === id && job.repository === repo) || null;
 }
@@ -88,16 +97,16 @@ describe('hosted auth gates', () => {
 
     db.getPool = () => ({ mocked: true });
     db.query = async (text, params) => {
-      if (text.includes('FROM memberships m JOIN installations')) {
+      if (sqlText(text).includes('FROM memberships m JOIN installations')) {
         return [{ installation_id: 2001, role: 'viewer' }];
       }
-      if (text.includes('SELECT DISTINCT installation_id FROM memberships')) {
+      if (sqlText(text).includes('SELECT DISTINCT installation_id FROM memberships')) {
         return [{ installation_id: 2001 }];
       }
       return [];
     };
     db.queryOne = async (text, params) => {
-      if (text.includes('SELECT role FROM memberships')) {
+      if (sqlText(text).includes('SELECT role FROM memberships')) {
         return { role: params[1] === 2001 ? 'viewer' : null };
       }
       return null;
@@ -127,26 +136,26 @@ describe('hosted auth gates', () => {
     const { port } = server.address();
     baseUrl = `http://127.0.0.1:${port}`;
 
-    viewerCookie = `julesops_sid=${createSession({ githubId: 99, githubLogin: 'viewer-user' })}`;
-    adminCookie = `julesops_sid=${createSession({ githubId: 100, githubLogin: 'admin-user' })}`;
+    viewerCookie = `julesops_sid=${createSession({ userId: VIEWER_ID, githubId: 99, githubLogin: 'viewer-user' })}`;
+    adminCookie = `julesops_sid=${createSession({ userId: ADMIN_ID, githubId: 100, githubLogin: 'admin-user' })}`;
 
-    // Patch the DB response to treat githubId 100 as an admin for installation 2001.
+    // Patch the DB response to treat the admin user as an admin for installation 2001.
     db.queryOne = async (text, params) => {
-      if (text.includes('SELECT role FROM memberships')) {
-        if (params[0] === 100 && Number(params[1]) === 2001) return { role: 'admin' };
-        if (params[0] === 99 && Number(params[1]) === 2001) return { role: 'viewer' };
+      if (sqlText(text).includes('SELECT role FROM memberships')) {
+        if (params[0] === ADMIN_ID && Number(params[1]) === 2001) return { role: 'admin' };
+        if (params[0] === VIEWER_ID && Number(params[1]) === 2001) return { role: 'viewer' };
         return null;
       }
       return null;
     };
     db.query = async (text, params) => {
-      if (text.includes('FROM memberships m JOIN installations')) {
-        if (params[0] === 99) return [{ installation_id: 2001, role: 'viewer' }];
-        if (params[0] === 100) return [{ installation_id: 2001, role: 'admin' }];
+      if (sqlText(text).includes('FROM memberships m JOIN installations')) {
+        if (params[0] === VIEWER_ID) return [{ installation_id: 2001, role: 'viewer' }];
+        if (params[0] === ADMIN_ID) return [{ installation_id: 2001, role: 'admin' }];
       }
-      if (text.includes('SELECT DISTINCT installation_id FROM memberships')) {
-        if (params[0] === 99) return [{ installation_id: 2001 }];
-        if (params[0] === 100) return [{ installation_id: 2001 }];
+      if (sqlText(text).includes('SELECT DISTINCT installation_id FROM memberships')) {
+        if (params[0] === VIEWER_ID) return [{ installation_id: 2001 }];
+        if (params[0] === ADMIN_ID) return [{ installation_id: 2001 }];
       }
       return [];
     };
@@ -193,6 +202,15 @@ describe('hosted auth gates', () => {
     const body = await res.json();
     assert.equal(body.jobs.length, 1);
     assert.equal(body.jobs[0].repository, 'test-org/alpha');
+  });
+
+  test('gives a session without a users.id no access', async () => {
+    // RBAC keys memberships by users.id; a GitHub id alone must never grant access.
+    const cookie = `julesops_sid=${createSession({ githubId: 99, githubLogin: 'viewer-user' })}`;
+    const res = await req('/api/jobs', { headers: { cookie, accept: 'application/json' } });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.jobs.length, 0);
   });
 
   test('blocks viewer access to another installation job', async () => {

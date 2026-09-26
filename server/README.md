@@ -51,6 +51,8 @@ export GITHUB_WEBHOOK_SECRET="dev-secret"
 npm start
 ```
 
+Demo mode runs **without login** (unless `NODE_ENV=production` or `DATABASE_URL` is set) and binds to `127.0.0.1`. Don't expose it publicly.
+
 ## Run smoke tests
 
 ```bash
@@ -87,13 +89,14 @@ Key variables:
 | `HOST` | `127.0.0.1` | HTTP host |
 | `DATABASE_URL` | *(unset)* | Postgres URL — if absent, JSON-file demo mode |
 | `GITHUB_APP_ID` | *(unset)* | GitHub App numeric ID |
-| `GITHUB_WEBHOOK_SECRET` | *(unset)* | Webhook signature verification secret |
+| `GITHUB_WEBHOOK_SECRET` | *(unset)* | Webhook signature verification secret. Unset: webhooks are rejected in production, accepted unverified in local demo mode. |
 | `GITHUB_PRIVATE_KEY` | *(unset)* | PEM private key (newlines as `\n`) |
 | `GITHUB_OAUTH_CLIENT_ID` | *(unset)* | GitHub OAuth App client ID |
 | `GITHUB_OAUTH_CLIENT_SECRET` | *(unset)* | GitHub OAuth App client secret |
 | `SESSION_SECRET` | *(unset)* | Session signing secret |
 | `STRIPE_SECRET_KEY` | *(unset)* | Stripe secret key |
-| `STRIPE_WEBHOOK_SECRET` | *(unset)* | Stripe webhook signing secret |
+| `STRIPE_WEBHOOK_SECRET` | *(unset)* | Stripe webhook signing secret. Unset: Stripe webhooks are rejected in production. |
+| `CORS_ORIGIN` | *(unset)* | Origin allowed to call the API cross-site. Unset: no CORS headers. |
 | `SENDGRID_API_KEY` | *(unset)* | SendGrid API key for alert email delivery |
 | `ALERT_EMAIL_FROM` | *(unset)* | Verified sender address for alert emails |
 | `ALERT_EMAIL_FROM_NAME` | `JulesOps` | Sender display name for alert emails |

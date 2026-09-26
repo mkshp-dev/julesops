@@ -147,6 +147,11 @@ async function sendEmail(destination, alert) {
     userAgent: 'JulesOps-AlertWorker/0.3',
   });
 
+  if (!result.ok && result.status === undefined) {
+    // No HTTP response at all (connection refused, DNS failure, timeout): report why.
+    return { ok: false, error: `SendGrid delivery failed: ${result.error}` };
+  }
+
   if (!result.ok) {
     return {
       ok: false,
