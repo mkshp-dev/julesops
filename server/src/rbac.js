@@ -168,7 +168,8 @@ function requireRole(role) {
       return true;
     }
 
-    const userRole = await getUserRole(req.session.githubId, installationId);
+    // Memberships reference users.id; a session without one (demo login) has no role.
+    const userRole = req.session.userId ? await getUserRole(req.session.userId, installationId) : null;
 
     if (!userRole || !roleAtLeast(userRole, role)) {
       sendJson(res, 403, {
@@ -196,7 +197,8 @@ async function filterJobsByAuthorization(jobs, session) {
   const pool = db.getPool();
   if (!pool || !session) return jobs;
 
-  const installationIds = await getUserInstallations(session.githubId);
+  if (!session.userId) return [];
+  const installationIds = await getUserInstallations(session.userId);
   if (installationIds.length === 0) return [];
 
   // Get authorized repo full names

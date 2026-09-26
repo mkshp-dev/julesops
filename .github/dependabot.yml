@@ -1,0 +1,20 @@
+version: 2
+updates:
+  # Actions used by CI, the kit workflows, and the action itself (action.yml).
+  - package-ecosystem: github-actions
+    directories:
+      - "/"
+      - "/workflows"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: "/server"
+    schedule:
+      interval: weekly
+    groups:
+      server:
+        patterns: ["*"]

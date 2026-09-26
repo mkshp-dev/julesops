@@ -13,7 +13,7 @@
  *   OAUTH_REDIRECT_URI          — Callback URL (default: http://HOST:PORT/auth/github/callback)
  *
  * On successful login, the session gains:
- *   { githubId, githubLogin, githubName, githubAvatarUrl, accessToken }
+ *   { userId, githubId, githubLogin, githubName, githubAvatarUrl, accessToken }
  *
  * The user record is persisted to Postgres (if available) or logged only.
  */
@@ -177,6 +177,18 @@ async function upsertUser(user) {
 
 // ─── CSRF state helpers ───────────────────────────────────────────────────────
 
+/**
+ * Only allow redirects to a path on this site after login. Absolute URLs,
+ * protocol-relative "//host" and "/\\host" forms, and anything else fall back to "/",
+ * so the login flow cannot be used as an open redirect.
+ */
+function safeRedirectPath(value) {
+  if (typeof value !== 'string' || !value.startsWith('/')) return '/';
+  if (value.startsWith('//') || value.startsWith('/\\')) return '/';
+  if (/[\u0000-\u001f]/.test(value)) return '/';
+  return value;
+}
+
 function createOAuthState(redirectTo = '/') {
   const state = crypto.randomBytes(16).toString('hex');
   pendingStates.set(state, { redirectTo, expiresAt: Date.now() + STATE_TTL_MS });
@@ -207,7 +219,7 @@ function handleOAuthStart(req, res) {
   }
 
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const redirectTo = url.searchParams.get('redirect_to') || '/';
+  const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'));
   const state = createOAuthState(redirectTo);
 
   const params = new URLSearchParams({
@@ -308,6 +320,8 @@ async function handleOAuthCallback(req, res) {
 
   // Create session
   const sessionId = createSession({
+    // users.id (UUID) — memberships reference it, so RBAC lookups use this, not githubId.
+    userId: persistedUser ? persistedUser.id : null,
     githubId: githubUser.id,
     githubLogin: githubUser.login,
     githubName: githubUser.name,
@@ -340,6 +354,7 @@ function handleLogout(req, res) {
 }
 
 module.exports = {
+  safeRedirectPath,
   handleOAuthStart,
   handleOAuthCallback,
   handleLogout,
