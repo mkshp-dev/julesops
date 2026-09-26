@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: mkshp-dev/julesops@v0.5.0
+      - uses: mkshp-dev/julesops@v0.6.0
         with:
           mode: sync
           dispatch-workflow: jules-dispatch.yml

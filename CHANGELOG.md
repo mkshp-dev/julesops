@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-26
+
 ### Changed
 - **A blocked issue no longer stops the queue.** Only `in-progress` and `review` issues hold it; a blocked issue waits for a maintainer while the next queued issue is dispatched. Set `queue.blocked_holds_queue: true` for the previous behavior.
 - **JulesOps is free, with no paid tier.** Optional donations go through GitHub Sponsors (`.github/FUNDING.yml`). The server in `server/` is now an optional self-hostable backend; `PRIVACY.md` and `TERMS.md` no longer describe a commercial hosted service.
@@ -30,9 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The dashboard escapes every value it renders (repository names, statuses, numbers, dates, error messages); values containing HTML could previously inject markup.
 
 ### Fixed
-- Hosted RBAC looked up memberships by GitHub id, but memberships reference `users.id` (a UUID), so every permission check would fail against Postgres. Sessions now carry `userId`.
+- Server RBAC looked up memberships by GitHub id, but memberships reference `users.id` (a UUID), so every permission check would fail against Postgres. Sessions now carry `userId`.
 - Email alerts reported "HTTP undefined" instead of the real error when SendGrid was unreachable.
 - The alert worker read `server/data/store.json` directly, ignoring `JULESOPS_DATA_DIR`.
+- The dispatch run summary said a blocked issue holds the queue even when `queue.blocked_holds_queue` is off.
 
 ## [0.5.0] - 2026-09-25
 

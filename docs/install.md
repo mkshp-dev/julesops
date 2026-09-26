@@ -95,7 +95,7 @@ From `workflows/`:
 - `workflows/jules-state-sync.yml` → `.github/workflows/jules-state-sync.yml`
 - `workflows/jules-watchdog.yml` → `.github/workflows/jules-watchdog.yml`
 
-The workflows call `mkshp-dev/julesops` pinned to a release (for example `@v0.5.0`); keep that version when copying.
+The workflows call `mkshp-dev/julesops` pinned to a release (for example `@v0.6.0`); keep that version when copying.
 
 Then create `.github/jules-repo.md` in the adopting repo.
 
